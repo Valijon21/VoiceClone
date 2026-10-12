@@ -63,10 +63,20 @@ class GenerationJob(models.Model):
             self.error_message = error
         if new_status == self.STATUS_RUNNING and not self.started_at:
             self.started_at = timezone.now()
-        elif new_status in (self.STATUS_SUCCEEDED, self.STATUS_FAILED, self.STATUS_CANCELLED):
+        elif new_status == self.STATUS_SUCCEEDED:
+            self.progress_percent = 100
+            self.completed_at = timezone.now()
+        elif new_status in (self.STATUS_FAILED, self.STATUS_CANCELLED):
             self.completed_at = timezone.now()
         self.save(
-            update_fields=["status", "error_message", "started_at", "completed_at", "updated_at"]
+            update_fields=[
+                "status",
+                "error_message",
+                "progress_percent",
+                "started_at",
+                "completed_at",
+                "updated_at",
+            ]
         )
 
 

@@ -41,13 +41,26 @@
 - [x] `VC-047`: OpenAPI schema generatori (`/api/schema/`)
 - [x] `VC-048`: Strukturaviy xatolar va API logging (`custom_exception_handler`)
 
-## Hozirgi faol sprint (Sprint 06: Async Jobs & Celery Persistence / Phase 05)
-- [ ] `VC-050`: Celery queue va worker lifecycle
-- [ ] `VC-051`: `POST /generations/` asinxron task dispatch
-- [ ] `VC-052`: Idempotency key va safe retry
-- [ ] `VC-053`: Job polling endpoint va progress modeli
-- [ ] `VC-054`: Failure mapping: model offline, OOM, invalid input, timeout
-- [ ] `VC-055`: Result ownership checks va signed/private media access
-- [ ] `VC-056`: Generated file lifecycle va retention tozalash vazifasi
+## Sprint 06 (Async Jobs & Celery Persistence / Phase 05) — DONE
+- [x] `VC-050`: Celery queue va worker lifecycle (`core/celery.py`, `shared_task`)
+- [x] `VC-051`: `POST /generations/` asinxron task dispatch (`process_speech_synthesis_job.delay`)
+- [x] `VC-052`: Idempotency key va safe retry (`idempotency_key` deduplication, celery backoff)
+- [x] `VC-053`: Job polling endpoint va progress modeli (`GET /jobs/<id>/`)
+- [x] `VC-054`: Failure mapping: retryable vs non-retryable xatolar ajratildi
+- [x] `VC-055`: Result ownership checks va audio natijalar izolyatsiyasi
+- [x] `VC-056`: Generated file lifecycle va retention tozalash (`cleanup_expired_audio_assets`)
+
+## Hozirgi faol sprint (Sprint 07: React Frontend MVP / Phase 06)
+- [ ] `VC-060`: React + Vite + TypeScript ilovasi, routing va strukturani yaratish
+- [ ] `VC-061`: UI dizayn tokenlari, responsiv maket va holatlar (loading, error, empty)
+- [ ] `VC-062`: Autentifikatsiya sahifalari va himoyalangan yo‘llar (Login, Register, Logout)
+- [ ] `VC-063`: Audio yozib olish va WAV fayl yuklash komponenti
+- [ ] `VC-064`: Ovoz profili yaratish va qat'iy Consent UI (Rozilik berish oynasi)
+- [ ] `VC-065`: Matn, til, ovoz va generatsiya sozlamalari shakli (Form)
+- [ ] `VC-066`: Generatsiya jarayoni, polling va progress bar komponenti
+- [ ] `VC-067`: Audio pleer, to‘lqin (waveform) preview va WAV yuklab olish
+- [ ] `VC-068`: Ovoz profilini va audio tarixini o‘chirish oqimi (Privacy/GDPR)
+- [ ] `VC-069`: Accessibility (a11y) va frontend smoke testlari
+
 
 

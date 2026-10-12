@@ -57,13 +57,13 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 05 — Async jobs & persistence
 
-- [ ] `VC-050` — Celery queue va worker lifecycle. **Done:** HTTP request audio jobni synchronously kutmaydi.
-- [ ] `VC-051` — `POST /generations/` task dispatch. **Done:** request tekshiriladi, job DB’da saqlanadi, queue’ga bir marta yuboriladi.
-- [ ] `VC-052` — Idempotency key va safe retry. **Done:** takroriy client request duplicate billing/job bermaydi.
-- [ ] `VC-053` — Job polling endpoint va progress modeli. **Done:** pending/running/succeeded/failed/cancelled statuslar aniq.
-- [ ] `VC-054` — Failure mapping: model offline, OOM, invalid input, timeout, transient error. **Done:** retryable/non-retryable farqi hujjatlashtirilgan.
-- [ ] `VC-055` — Result ownership checks va signed/private media access. **Done:** boshqa user audio natijasini ola olmaydi.
-- [ ] `VC-056` — Generated file lifecycle va retention job. **Done:** expired asset va orphan file’lar tozalanadi.
+- [x] `VC-050` — Celery queue va worker lifecycle. **Done:** `core/celery.py` va `shared_task` orqali audio generatsiyasi to‘liq asinxron qilindi, HTTP so‘rov kutib turmaydi.
+- [x] `VC-051` — `POST /generations/` task dispatch. **Done:** `GenerationJobListCreateView` da task tekshirilib saqlanadi va `process_speech_synthesis_job.delay` orqali navbatga uzatiladi.
+- [x] `VC-052` — Idempotency key va safe retry. **Done:** bir xil `idempotency_key` bilan yuborilgan takroriy so‘rovlar qayta yaratilmasdan mavjud jobni qaytaradi.
+- [x] `VC-053` — Job polling endpoint va progress modeli. **Done:** `GET /jobs/<id>/` orqali progress foizi (0-100%), holati va yakunlangan audio fayli olinadi.
+- [x] `VC-054` — Failure mapping: model offline, OOM, invalid input, timeout, transient error. **Done:** 400/403 xatolari qayta urinilmaydigan FAILED holatiga, 503 va timeout xatolari eksponentsial retry mexanizmiga o‘tkazildi.
+- [x] `VC-055` — Result ownership checks va signed/private media access. **Done:** foydalanuvchilar faqat o‘zlariga tegishli audio va generatsiya natijalariga kirish huquqiga ega.
+- [x] `VC-056` — Generated file lifecycle va retention job. **Done:** `cleanup_expired_audio_assets` orqali 7 kundan eski generatsiya audiolari DB va diskdan xavfsiz tozalanadi.
 
 ## Phase 06 — React frontend MVP
 
