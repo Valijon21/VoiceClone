@@ -69,8 +69,59 @@ class OpenVoiceV2Adapter(VoiceModelAdapter):
             "sample_rate": 24000,
         }
 
+    def _get_converter(self):
+        if not self._is_loaded:
+            try:
+                import sys
+
+                ov_repo = (
+                    Path(__file__).resolve().parents[4]
+                    / "experiments"
+                    / "benchmark"
+                    / "openvoice"
+                    / "OpenVoice"
+                )
+                if ov_repo.exists() and str(ov_repo) not in sys.path:
+                    sys.path.insert(0, str(ov_repo))
+
+                from openvoice.api import ToneColorConverter
+
+                config_path = self._checkpoint_dir / "config.json"
+                ckpt_path = self._checkpoint_dir / "checkpoint.pth"
+                if config_path.exists() and ckpt_path.exists():
+                    self._converter = ToneColorConverter(str(config_path), device=self._device)
+                    self._converter.load_ckpt(str(ckpt_path))
+                    self._is_loaded = True
+                    logger.info("OpenVoice V2 ToneColorConverter loaded in-memory.")
+            except Exception as e:
+                logger.warning(f"ToneColorConverter load notice: {e}")
+        return self._converter
+
     async def extract_speaker_embedding(self, reference_audio_bytes: bytes) -> bytes:
         await self.validate_reference(reference_audio_bytes)
+        # Try real neural ToneColorConverter first
+        converter = self._get_converter()
+        if converter is not None:
+            try:
+                import io
+                import tempfile
+                import torch
+
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                    tmp.write(reference_audio_bytes)
+                    tmp_path = tmp.name
+                try:
+                    se = converter.extract_se(tmp_path)
+                    buf = io.BytesIO()
+                    torch.save(se.cpu(), buf)
+                    return buf.getvalue()
+                finally:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+            except Exception as err:
+                logger.warning(f"Neural SE extraction error, falling back to acoustic: {err}")
+
+        # Fallback to acoustic DSP feature extraction
         try:
             import io
             import json
@@ -133,6 +184,40 @@ class OpenVoiceV2Adapter(VoiceModelAdapter):
     ) -> bytes:
         if not speaker_embedding:
             return wav_bytes
+
+        # Attempt neural ToneColorConverter voice conversion
+        converter = self._get_converter()
+        if converter is not None:
+            try:
+                import io
+                import tempfile
+                import torch
+
+                # Check if embedding is a PyTorch tensor
+                if len(speaker_embedding) > 500 or speaker_embedding.startswith(b"PK"):
+                    tgt_se = torch.load(io.BytesIO(speaker_embedding), map_location=self._device)
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_src:
+                        tmp_src.write(wav_bytes)
+                        src_path = tmp_src.name
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
+                        out_path = tmp_out.name
+                    try:
+                        src_se = converter.extract_se(src_path)
+                        converter.convert(
+                            audio_src_path=src_path,
+                            src_se=src_se,
+                            tgt_se=tgt_se,
+                            output_path=out_path,
+                            tau=0.3,
+                        )
+                        with open(out_path, "rb") as f:
+                            return f.read()
+                    finally:
+                        for p in (src_path, out_path):
+                            if os.path.exists(p):
+                                os.remove(p)
+            except Exception as conv_err:
+                logger.warning(f"Neural conversion error, trying DSP: {conv_err}")
         try:
             import io
             import json
