@@ -257,3 +257,119 @@ def get_beta_analytics_summary(period: str = "all") -> dict[str, Any]:
             "scope": "operational_telemetry_only",
         },
     }
+
+
+def calculate_unit_economics(
+    period: str = "all",
+    gpu_hourly_cost_usd: float = 0.35,
+    storage_gb_monthly_usd: float = 0.023,
+    usd_uzs_rate: float = 12650.0,
+) -> dict[str, Any]:
+    """
+    Compute unit economics and COGS for speech synthesis workloads (VC-094).
+
+    Inputs:
+    - gpu_hourly_cost_usd: Cloud GPU hourly cost (default $0.35 for NVIDIA T4/RTX instance).
+    - storage_gb_monthly_usd: Object/SSD storage cost per GB-month (default $0.023).
+    - usd_uzs_rate: USD to UZS conversion rate.
+    """
+    qs = OperationalMetric.objects.all()
+    now = timezone.now()
+    if period == "24h":
+        qs = qs.filter(created_at__gte=now - timedelta(hours=24))
+    elif period == "7d":
+        qs = qs.filter(created_at__gte=now - timedelta(days=7))
+    elif period == "30d":
+        qs = qs.filter(created_at__gte=now - timedelta(days=30))
+
+    metrics = list(qs)
+
+    total_jobs = len(metrics)
+    total_audio_sec = sum(m.audio_duration_sec for m in metrics)
+    total_compute_ms = sum(m.compute_latency_ms for m in metrics if m.compute_latency_ms > 0)
+    total_compute_sec = total_compute_ms / 1000.0
+
+    total_audio_min = total_audio_sec / 60.0
+    rtf_values = [m.rtf for m in metrics if m.rtf is not None and m.rtf > 0]
+    avg_rtf = (
+        sum(rtf_values) / len(rtf_values)
+        if rtf_values
+        else (total_compute_sec / total_audio_sec if total_audio_sec > 0 else 0.38)
+    )
+
+    # 1. Compute Cost
+    gpu_cost_per_sec_usd = gpu_hourly_cost_usd / 3600.0
+    compute_cost_usd = total_compute_sec * gpu_cost_per_sec_usd
+    compute_cost_uzs = compute_cost_usd * usd_uzs_rate
+
+    # 2. Storage Cost (assuming 24kHz 16-bit mono WAV ~ 48,000 bytes/sec, 7 days retention)
+    est_bytes = total_audio_sec * 48_000
+    est_gb = est_bytes / (1024.0**3)
+    storage_cost_usd = est_gb * (storage_gb_monthly_usd * (7.0 / 30.0))
+    storage_cost_uzs = storage_cost_usd * usd_uzs_rate
+
+    # 3. Total COGS
+    total_cogs_usd = compute_cost_usd + storage_cost_usd
+    total_cogs_uzs = compute_cost_uzs + storage_cost_uzs
+
+    # Unit Cost per Minute of Audio
+    cogs_per_minute_usd = (
+        (total_cogs_usd / total_audio_min)
+        if total_audio_min > 0
+        else (60.0 * avg_rtf * gpu_cost_per_sec_usd)
+    )
+    cogs_per_minute_uzs = cogs_per_minute_usd * usd_uzs_rate
+
+    # Commercial Revenue benchmarks (from VC-093)
+    price_per_min_creator = 2633.0
+    price_per_min_pro = 1658.0
+    price_per_min_payg = 1500.0
+
+    margin_creator_pct = (
+        round(((price_per_min_creator - cogs_per_minute_uzs) / price_per_min_creator) * 100.0, 1)
+        if price_per_min_creator > 0
+        else 0.0
+    )
+    margin_pro_pct = (
+        round(((price_per_min_pro - cogs_per_minute_uzs) / price_per_min_pro) * 100.0, 1)
+        if price_per_min_pro > 0
+        else 0.0
+    )
+    margin_payg_pct = (
+        round(((price_per_min_payg - cogs_per_minute_uzs) / price_per_min_payg) * 100.0, 1)
+        if price_per_min_payg > 0
+        else 0.0
+    )
+
+    return {
+        "period": period,
+        "workload": {
+            "total_jobs": total_jobs,
+            "total_audio_seconds": round(total_audio_sec, 2),
+            "total_audio_minutes": round(total_audio_min, 2),
+            "total_compute_seconds": round(total_compute_sec, 2),
+            "average_rtf": round(avg_rtf, 4),
+            "estimated_storage_mb": round(est_bytes / (1024.0**2), 2),
+        },
+        "rates": {
+            "gpu_hourly_usd": gpu_hourly_cost_usd,
+            "storage_gb_monthly_usd": storage_gb_monthly_usd,
+            "usd_uzs_rate": usd_uzs_rate,
+        },
+        "costs": {
+            "compute_cost_usd": round(compute_cost_usd, 4),
+            "compute_cost_uzs": round(compute_cost_uzs, 2),
+            "storage_cost_usd": round(storage_cost_usd, 6),
+            "storage_cost_uzs": round(storage_cost_uzs, 2),
+            "total_cogs_usd": round(total_cogs_usd, 4),
+            "total_cogs_uzs": round(total_cogs_uzs, 2),
+            "cogs_per_minute_audio_usd": round(cogs_per_minute_usd, 5),
+            "cogs_per_minute_audio_uzs": round(cogs_per_minute_uzs, 2),
+        },
+        "profitability_margins": {
+            "creator_tier_margin_percent": margin_creator_pct,
+            "pro_tier_margin_percent": margin_pro_pct,
+            "payg_margin_percent": margin_payg_pct,
+        },
+    }
+

@@ -46,6 +46,11 @@ def api_schema_view(_request):
                         "summary": "Retrieve operational beta analytics (p50/p95 latency, RTF, error rates)"
                     }
                 },
+                "/api/v1/audit/analytics/economics/": {
+                    "get": {
+                        "summary": "Retrieve unit economics, compute COGS, and margin breakdown"
+                    }
+                },
                 "/api/v1/audit/reports/": {
                     "get": {"summary": "List abuse reports"},
                     "post": {"summary": "Submit abuse report"},

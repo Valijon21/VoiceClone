@@ -81,12 +81,12 @@
 - [x] `VC-083`: Hardware detection va foydalanuvchiga tushunarli errorlar (`hardware.py`, `/hardware`)
 - [x] `VC-084`: Installer/desktop wrapper talabini tekshirish (`docs/DECISIONS/0002-desktop-wrapper-evaluation.md`)
 
-## Hozirgi faol sprint (Sprint 10: Closed Beta & Product Validation / Phase 09)
+## Hozirgi faol sprint (Sprint 10: Closed Beta & Product Validation / Phase 09) — DONE
 - [x] `VC-090`: Beta analytics: job success, p50/p95 latency, RTF, language/model, error rates
 - [x] `VC-091`: 10–20 beta foydalanuvchi bilan kuzatuv va user journey
 - [x] `VC-092`: O‘zbekcha talaffuz bug backlog'i va normalizatsiya
 - [x] `VC-093`: Target auditoriya va willingness-to-pay intervyulari
-- [ ] `VC-094`: Unit economics dashboard va compute tannarx hisobi
+- [x] `VC-094`: Unit economics dashboard va compute tannarx hisobi
 
 
 

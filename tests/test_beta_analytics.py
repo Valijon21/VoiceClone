@@ -334,3 +334,56 @@ def test_rate_generation_job_endpoint(api_client, standard_user, admin_user):
     assert audit.metadata["rating"] == 5
     assert audit.metadata["feedback_notes"] == "Ovoz tembri juda tabiiy va tiniq chiqdi."
 
+
+@pytest.mark.django_db
+def test_unit_economics_calculation_and_endpoint(api_client, standard_user, admin_user):
+    """VC-094: Test compute COGS, unit economics calculation, and admin economics endpoint."""
+    from apps.audit.analytics import calculate_unit_economics
+
+    # 1. Setup sample operational metric with 60 seconds audio and 22.8 seconds compute (RTF 0.38)
+    OperationalMetric.objects.create(
+        job_id=uuid.uuid4(),
+        user_id=standard_user.id,
+        model_id="openvoice_v2",
+        language="uz",
+        status="SUCCEEDED",
+        char_count=350,
+        audio_duration_sec=60.0,
+        compute_latency_ms=22800.0,
+        total_latency_ms=23500.0,
+        rtf=0.38,
+        error_category="NONE",
+    )
+
+    # 2. Test calculate_unit_economics function
+    econ = calculate_unit_economics(period="all")
+    assert econ["workload"]["total_audio_seconds"] == 60.0
+    assert econ["workload"]["total_audio_minutes"] == 1.0
+    assert econ["workload"]["total_compute_seconds"] == 22.8
+    assert econ["costs"]["compute_cost_usd"] > 0
+    assert econ["costs"]["cogs_per_minute_audio_uzs"] > 20.0
+    assert econ["profitability_margins"]["creator_tier_margin_percent"] > 90.0
+
+    # 3. Test API endpoint access
+    econ_url = "/api/v1/audit/analytics/economics/"
+
+    # Unauthenticated -> Denied (401 or 403)
+    resp_anon = api_client.get(econ_url)
+    assert resp_anon.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+    # Standard user -> 403 Forbidden
+    api_client.force_authenticate(user=standard_user)
+    resp_user = api_client.get(econ_url)
+    assert resp_user.status_code == status.HTTP_403_FORBIDDEN
+
+    # Admin user -> 200 OK
+    api_client.force_authenticate(user=admin_user)
+    resp_admin = api_client.get(f"{econ_url}?period=7d&gpu_cost=0.35")
+    assert resp_admin.status_code == status.HTTP_200_OK
+    data = resp_admin.json()
+    assert "workload" in data
+    assert "costs" in data
+    assert "profitability_margins" in data
+    assert data["rates"]["gpu_hourly_usd"] == 0.35
+
+

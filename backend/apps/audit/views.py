@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .analytics import get_beta_analytics_summary
+from .analytics import calculate_unit_economics, get_beta_analytics_summary
 from .models import AbuseReport, AuditEvent
 from .serializers import AbuseReportSerializer, AuditEventSerializer, CreateAbuseReportSerializer
 
@@ -94,4 +94,28 @@ class BetaAnalyticsView(APIView):
             period = "all"
         data = get_beta_analytics_summary(period=period)
         return Response(data, status=status.HTTP_200_OK)
+
+
+class UnitEconomicsView(APIView):
+    """
+    Unit economics, compute COGS, and gross margin dashboard endpoint (VC-094).
+    Calculates exact compute cost, storage usage, and margins against commercial tiers.
+    Restricted to Admin/Staff users.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        period = request.query_params.get("period", "all")
+        if period not in ("24h", "7d", "30d", "all"):
+            period = "all"
+
+        try:
+            gpu_cost = float(request.query_params.get("gpu_cost", 0.35))
+        except (ValueError, TypeError):
+            gpu_cost = 0.35
+
+        data = calculate_unit_economics(period=period, gpu_hourly_cost_usd=gpu_cost)
+        return Response(data, status=status.HTTP_200_OK)
+
 

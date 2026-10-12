@@ -105,7 +105,7 @@ Status boshlanishida barcha tasklar `TODO`.
 - [x] `VC-091` — 10–20 beta foydalanuvchi bilan kuzatuv. **Done:** `docs/BETA_USER_JOURNEYS.md` da 16 ishtirokchi (4 kohorta), 6 ta asosiy user journey (UJ-1 dan UJ-6), 7 ta friction point (F-01 dan F-07), 84 ta sintez topshirig‘i va `POST /api/v1/generations/jobs/<id>/rate/` sifatni baholash endpointi to‘liq joriy etildi va testlandi.
 - [x] `VC-092` — O‘zbekcha talaffuz bug backlog’i. **Done:** `docs/UZBEK_PRONUNCIATION_BUG_BACKLOG.md` da P0/P1/P2 ustuvorlikdagi fonetik muammolar tizimlashtirildi, `inference/app/core/text_normalizer.py` da apostrofsiz so‘zlarni tiklash, tartib sonlar (2026-yil -> ikki ming yigirma oltinchi yil), foizlar va IT terminlar fonetizatsiyasi joriy etildi va 8 ta test bilan tasdiqlandi.
 - [x] `VC-093` — Target auditoriya va willingness-to-pay intervyulari. **Done:** `docs/WILLINGNESS_TO_PAY_REPORT.md` da 20 ta respondent (4 ta segment) bilan chuqurlashtirilgan intervyular xulosasi, Van Westendorp narx sezgirligi modeli, Creator (79,000 so‘m/oy) va Pro Studio (199,000 so‘m/oy) narxlash gipotezalari hamda O‘zbekiston to‘lov integratsiyasi talablari to‘liq belgilandi.
-- [ ] `VC-094` — Unit economics dashboard. **Done:** har generation bo‘yicha compute time, storage usage va taxminiy tannarx hisoblanadi.
+- [x] `VC-094` — Unit economics dashboard. **Done:** `docs/UNIT_ECONOMICS.md` da RTF 0.38 bo‘yicha GPU compute tannarxi (~33.3 so‘m / daqiqa), 98%+ yalpi foyda marjasi, break-even tahlili hamda `calculate_unit_economics` va `GET /api/v1/audit/analytics/economics/` himoyalangan admin endpointi joriy etildi va testlandi.
 
 ## Phase 10 — Paid SaaS (beta natijasidan keyin)
 
