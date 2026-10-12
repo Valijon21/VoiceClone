@@ -51,8 +51,17 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
 
     # Prepare payload for FastAPI inference service
     reference_b64 = None
-    if job.voice_profile and job.voice_profile.speaker_embedding:
-        reference_b64 = base64.b64encode(job.voice_profile.speaker_embedding).decode("ascii")
+    if job.voice_profile:
+        # Find user's latest reference audio asset to supply genuine speaker acoustic features
+        latest_ref = job.user.audio_assets.filter(asset_type="REFERENCE_VOICE").first()
+        if latest_ref and latest_ref.file:
+            try:
+                with latest_ref.file.open("rb") as f:
+                    reference_b64 = base64.b64encode(f.read()).decode("ascii")
+            except Exception as ref_err:
+                logger.warning(f"Failed to load reference audio file for job {job.id}: {ref_err}")
+        elif job.voice_profile.speaker_embedding:
+            reference_b64 = base64.b64encode(job.voice_profile.speaker_embedding).decode("ascii")
 
     inference_payload = {
         "text": job.input_text,
