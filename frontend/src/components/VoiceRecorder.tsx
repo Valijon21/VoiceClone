@@ -5,7 +5,7 @@ import { encodeAudioBufferToWav } from "../utils/wavEncoder";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { logger } from "../utils/logger";
 
-// Studio recording engine using Web Audio API (with MediaRecorder compatibility)
+// Studio recording engine using MediaRecorder + Web Audio API (with zero-feedback Analyser)
 
 interface VoiceRecorderProps {
   onAudioUploaded: (asset: AudioAsset) => void;
@@ -21,12 +21,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Web Audio API refs
+  // Audio streams & Web Audio API refs
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioChunksRef = useRef<Float32Array[]>([]);
+  const muteGainRef = useRef<GainNode | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -45,13 +46,21 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (scriptProcessorRef.current) {
-      scriptProcessorRef.current.disconnect();
-      scriptProcessorRef.current = null;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        // Ignored if already stopped
+      }
+      mediaRecorderRef.current = null;
     }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
+    }
+    if (muteGainRef.current) {
+      muteGainRef.current.disconnect();
+      muteGainRef.current = null;
     }
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close().catch(() => {});
@@ -60,7 +69,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
     analyserRef.current = null;
   };
 
-  // Start live microphone recording with Web Audio API
+  // Start live microphone recording with hardware MediaRecorder + AnalyserNode
   const startRecording = async () => {
     setUploadError(null);
     setUploadSuccess(null);
@@ -70,19 +79,19 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
     }
     setAudioBlob(null);
     setAudioDuration(0);
-    audioChunksRef.current = [];
+    recordedChunksRef.current = [];
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
+          echoCancellation: false,
+          noiseSuppression: false,
           autoGainControl: true,
-          sampleRate: 24000,
         },
       });
       mediaStreamRef.current = stream;
 
+      // 1. Setup Web Audio API exclusively for the real-time visualizer
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const audioCtx = new AudioCtx();
       audioContextRef.current = audioCtx;
@@ -92,28 +101,46 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       }
 
       const source = audioCtx.createMediaStreamSource(stream);
-
-      // Create AnalyserNode for real-time frequency bar visuals
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
       analyser.smoothingTimeConstant = 0.65;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      // Create ScriptProcessorNode for collecting raw 16-bit PCM chunks
-      const bufferSize = 4096;
-      const scriptProcessor = audioCtx.createScriptProcessor(bufferSize, 1, 1);
-      scriptProcessorRef.current = scriptProcessor;
+      // Connect analyser to a silent gain node so the audio graph stays active
+      // without looping back audio to speakers (which causes echo cancellation muting)
+      const muteGain = audioCtx.createGain();
+      muteGain.gain.value = 0;
+      analyser.connect(muteGain);
+      muteGain.connect(audioCtx.destination);
+      muteGainRef.current = muteGain;
 
-      scriptProcessor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        // Copy chunk
-        audioChunksRef.current.push(new Float32Array(inputData));
+      // 2. Setup standard, reliable MediaRecorder
+      let mimeType = "";
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ];
+      for (const cand of candidates) {
+        if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cand)) {
+          mimeType = cand;
+          break;
+        }
+      }
+
+      const recorderOptions = mimeType ? { mimeType } : undefined;
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
       };
 
-      // Connect script processor to keep audio graph running
-      source.connect(scriptProcessor);
-      scriptProcessor.connect(audioCtx.destination);
+      mediaRecorder.start(200); // 200ms slice chunks
 
       setIsRecording(true);
       setRecordSeconds(0);
@@ -122,7 +149,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
         setRecordSeconds((prev) => prev + 1);
       }, 1000);
 
-      logger.info("Microphone audio recording started successfully with Web Audio API");
+      logger.info(`Microphone recording started with MediaRecorder (${mimeType || "default"})`);
     } catch (err: unknown) {
       logger.error("Failed to access microphone", err);
       setUploadError("Mikrofonga ulanishda xatolik yuz berdi. Iltimos, brauzerda mikrofon ruxsatini yoqing.");
@@ -141,52 +168,70 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       timerRef.current = null;
     }
 
-    const audioCtx = audioContextRef.current;
-    const rawChunks = audioChunksRef.current;
-
-    if (!audioCtx || rawChunks.length === 0) {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
       cleanupAudioSession();
-      setUploadError("Audio signali yozilmadi. Iltimos, qaytadan urinib ko'ring.");
       return;
     }
 
-    try {
-      // Calculate total sample count
-      let totalSamples = 0;
-      for (const chunk of rawChunks) {
-        totalSamples += chunk.length;
+    mediaRecorder.onstop = async () => {
+      const chunks = recordedChunksRef.current;
+      if (chunks.length === 0) {
+        setUploadError("Audio signali yozilmadi. Iltimos, qaytadan urinib ko'ring.");
+        cleanupAudioSession();
+        return;
       }
 
-      // Merge Float32Array chunks into single continuous buffer
-      const mergedSamples = new Float32Array(totalSamples);
-      let offset = 0;
-      for (const chunk of rawChunks) {
-        mergedSamples.set(chunk, offset);
-        offset += chunk.length;
+      try {
+        const rawBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+        logger.info(`Raw audio recorded: ${rawBlob.size} bytes (${chunks.length} chunks)`);
+
+        // Decode into AudioBuffer using AudioContext
+        const arrayBuffer = await rawBlob.arrayBuffer();
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const decodeCtx = new AudioCtx();
+        const decodedBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+
+        // Check audio signal energy / peak amplitude
+        const channelData = decodedBuffer.getChannelData(0);
+        let maxPeak = 0;
+        let sumSquares = 0;
+        for (let i = 0; i < channelData.length; i++) {
+          const val = Math.abs(channelData[i]);
+          if (val > maxPeak) maxPeak = val;
+          sumSquares += val * val;
+        }
+        const rms = Math.sqrt(sumSquares / channelData.length);
+        const durationSec = Math.round(decodedBuffer.duration * 10) / 10;
+
+        logger.info(`Audio analysis: peak=${maxPeak.toFixed(3)}, rms=${rms.toFixed(4)}, duration=${durationSec}s, rate=${decodedBuffer.sampleRate}Hz`);
+
+        // Convert to standard 16-bit PCM WAV
+        const wavBlob = encodeAudioBufferToWav(decodedBuffer);
+        setAudioBlob(wavBlob);
+        setAudioDuration(durationSec);
+
+        const url = URL.createObjectURL(wavBlob);
+        setAudioUrl(url);
+
+        if (maxPeak < 0.01) {
+          setUploadError("Diqqat: Ovoz signali juda past yoki mikrofonda ovoz bo'lmadi. Sozlamalarni tekshiring va balandroq gapiring.");
+        }
+
+        logger.info(`WAV encoded successfully: ${wavBlob.size} bytes, ${durationSec}s at ${decodedBuffer.sampleRate}Hz`);
+        decodeCtx.close().catch(() => {});
+      } catch (err) {
+        logger.warn("WAV transcode failed, falling back to raw recording blob", { error: String(err) });
+        const fallbackBlob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+        setAudioBlob(fallbackBlob);
+        setAudioDuration(recordSeconds);
+        setAudioUrl(URL.createObjectURL(fallbackBlob));
+      } finally {
+        cleanupAudioSession();
       }
+    };
 
-      // Create AudioBuffer
-      const sampleRate = audioCtx.sampleRate;
-      const audioBuffer = audioCtx.createBuffer(1, totalSamples, sampleRate);
-      audioBuffer.copyToChannel(mergedSamples, 0);
-
-      // Encode into clean, standard 16-bit PCM WAV Blob
-      const wavBlob = encodeAudioBufferToWav(audioBuffer);
-      const durationSec = Math.round((totalSamples / sampleRate) * 10) / 10;
-
-      setAudioBlob(wavBlob);
-      setAudioDuration(durationSec);
-
-      const url = URL.createObjectURL(wavBlob);
-      setAudioUrl(url);
-
-      logger.info(`Recorded WAV encoded successfully: ${wavBlob.size} bytes, ${durationSec}s at ${sampleRate}Hz`);
-    } catch (err: unknown) {
-      logger.error("Failed to encode WAV audio buffer", err);
-      setUploadError("Ovozni WAV formatiga o'tkazishda xatolik yuz berdi.");
-    } finally {
-      cleanupAudioSession();
-    }
+    mediaRecorder.stop();
   };
 
   // Upload recorded blob or chosen file to backend
@@ -200,7 +245,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       if (fileToUpload) {
         file = fileToUpload;
       } else if (audioBlob) {
-        file = new File([audioBlob], `recorded_voice_${Date.now()}.wav`, { type: "audio/wav" });
+        const ext = audioBlob.type.includes("wav") ? "wav" : "webm";
+        file = new File([audioBlob], `recorded_voice_${Date.now()}.${ext}`, { type: audioBlob.type });
       } else {
         throw new Error("Yuklash uchun audio topilmadi.");
       }
