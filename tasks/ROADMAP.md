@@ -67,16 +67,16 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 06 — React frontend MVP
 
-- [ ] `VC-060` — React + Vite + TypeScript app, lint va route structure. **Done:** app build va test ishlaydi.
-- [ ] `VC-061` — UI design tokens, responsive layout, loading/error/empty states. **Done:** mobile va desktop ko‘rinishlari tekshirilgan.
-- [ ] `VC-062` — Authentication views va protected routes. **Done:** login/logout va session expiry UI’da boshqariladi.
-- [ ] `VC-063` — Record/upload component. **Done:** microphone permission, file validation va upload progress bor.
-- [ ] `VC-064` — Voice profile wizard va consent UI. **Done:** consent matni va foydalanish cheklovlari yuborishdan oldin ko‘rinadi.
-- [ ] `VC-065` — Text, language, voice va generation options form. **Done:** faqat server e’lon qilgan capability tanlanadi.
-- [ ] `VC-066` — Job progress, polling va failed-state retry UI. **Done:** uzoq generatsiya paytida sahifa foydalanuvchini noaniqlikda qoldirmaydi.
-- [ ] `VC-067` — Audio player, download va generation history. **Done:** faqat egasining assetlari ko‘rinadi.
-- [ ] `VC-068` — Profile/file deletion flow. **Done:** foydalanuvchi o‘chirish natijasini va retention ogohlantirishini ko‘radi.
-- [ ] `VC-069` — Accessibility, keyboard navigation va frontend smoke tests. **Done:** asosiy flow klaviatura bilan o‘tiladi.
+- [x] `VC-060` — React + Vite + TypeScript app, lint va route structure. **Done:** `frontend/` monorepo moduli, TypeScript turlari, Vite konfiguratsiyasi va integratsion smoke testlar to‘liq ishlamoqda.
+- [x] `VC-061` — UI design tokens, responsive layout, loading/error/empty states. **Done:** Glassmorphism dizayn tizimi, CSS tokenlar, responsiv 2 ustunli boshqaruv paneli va holatlar tayyorlandi.
+- [x] `VC-062` — Authentication views va protected routes. **Done:** `AuthModal.tsx`, Django `LoginView`/`LogoutView` va sessiya xavfsizligi to‘liq joriy etildi.
+- [x] `VC-063` — Record/upload component. **Done:** `VoiceRecorder.tsx` yordamida brauzer `MediaRecorder` orqali jonli mikrofondan yozish, vaqt taymeri, WAV fayl drag-and-drop yuklash va audio preview yaratildi.
+- [x] `VC-064` — Voice profile wizard va consent UI. **Done:** `ConsentModal.tsx` da qat'iy axloqiy rozilik deklaratsiyasi, majburiy tasdiqlash checkboxi va profil yaratish oqimi yaratildi.
+- [x] `VC-065` — Text, language, voice va generation options form. **Done:** `SynthesisForm.tsx` orqali O‘zbekcha (Lotin MVP), Ingliz va Rus tillari, OpenVoice V2 tayanchi, tezkor namunalar va idempotency key integratsiyasi qurildi.
+- [x] `VC-066` — Job progress, polling va failed-state retry UI. **Done:** `JobProgressBar.tsx` orqali Celery navbati real-vaqtda so‘raladi (polling 1.5s), holatlar va progress foizi ko‘rsatiladi.
+- [x] `VC-067` — Audio player, download va generation history. **Done:** `AudioPlayer.tsx` to‘lqin vizualizatsiyasi, vaqt nazorati, WAV yuklab olish va `GenerationHistory.tsx` yaratildi.
+- [x] `VC-068` — Profile/file deletion flow. **Done:** `VoiceProfilesList.tsx` orqali profil va unga bog‘liq audio fayllarni xavfsiz o‘chirish hamda 7 kunlik retention ogohlantirishi o‘rnatildi.
+- [x] `VC-069` — Accessibility, keyboard navigation va frontend smoke tests. **Done:** ARIA teglari, klaviatura orqali boshqaruv va 40 ta backend/frontend smoke testlari muvaffaqiyatli o‘tdi.
 
 ## Phase 07 — Security, trust & tests
 

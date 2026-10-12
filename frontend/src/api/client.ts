@@ -1,0 +1,132 @@
+import { ApprovedModel, AudioAsset, GenerationJob, User, VoiceProfile } from "../types";
+
+const BASE_URL = "";
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers || {});
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    let errorData = { message: `Request failed with status ${res.status}` };
+    try {
+      errorData = await res.json();
+    } catch {
+      // fallback
+    }
+    throw errorData;
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export const api = {
+  // Accounts
+  async register(username: string, email: string, password: string): Promise<User> {
+    return request<User>("/api/v1/accounts/register/", {
+      method: "POST",
+      body: JSON.stringify({ username, email, password }),
+    });
+  },
+
+  async login(username: string, password: string): Promise<User> {
+    return request<User>("/api/v1/accounts/login/", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+  },
+
+  async logout(): Promise<void> {
+    await request<{ status: string }>("/api/v1/accounts/logout/", {
+      method: "POST",
+    });
+  },
+
+  async getMe(): Promise<User> {
+    return request<User>("/api/v1/accounts/me/");
+  },
+
+  // Voices & Consent
+  async getVoices(): Promise<VoiceProfile[]> {
+    const data = await request<{ results?: VoiceProfile[] } | VoiceProfile[]>("/api/v1/voices/");
+    return Array.isArray(data) ? data : data.results || [];
+  },
+
+  async createVoice(name: string, language: string = "uz"): Promise<VoiceProfile> {
+    return request<VoiceProfile>("/api/v1/voices/", {
+      method: "POST",
+      body: JSON.stringify({ name, language }),
+    });
+  },
+
+  async provideConsent(voiceId: string, consentText: string): Promise<void> {
+    await request(`/api/v1/voices/${voiceId}/consent/`, {
+      method: "POST",
+      body: JSON.stringify({ consent_text: consentText }),
+    });
+  },
+
+  async deleteVoice(voiceId: string): Promise<void> {
+    await request(`/api/v1/voices/${voiceId}/`, {
+      method: "DELETE",
+    });
+  },
+
+  // Audio Assets
+  async uploadAudio(file: File, assetType: string = "REFERENCE_VOICE"): Promise<AudioAsset> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("asset_type", assetType);
+    return request<AudioAsset>("/api/v1/audio/", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async deleteAudio(assetId: string): Promise<void> {
+    await request(`/api/v1/audio/${assetId}/`, {
+      method: "DELETE",
+    });
+  },
+
+  // Generations
+  async getApprovedModels(): Promise<ApprovedModel[]> {
+    const data = await request<{ approved_models: ApprovedModel[] }>("/api/v1/generations/models/");
+    return data.approved_models;
+  },
+
+  async getJobs(): Promise<GenerationJob[]> {
+    const data = await request<{ results?: GenerationJob[] } | GenerationJob[]>("/api/v1/generations/jobs/");
+    return Array.isArray(data) ? data : data.results || [];
+  },
+
+  async createJob(payload: {
+    text: string;
+    language: string;
+    modelId: string;
+    voiceProfileId?: string;
+    idempotencyKey?: string;
+  }): Promise<GenerationJob> {
+    return request<GenerationJob>("/api/v1/generations/jobs/", {
+      method: "POST",
+      body: JSON.stringify({
+        input_text: payload.text,
+        language: payload.language,
+        model_id: payload.modelId,
+        voice_profile: payload.voiceProfileId || null,
+        idempotency_key: payload.idempotencyKey || null,
+      }),
+    });
+  },
+
+  async getJobById(jobId: string): Promise<GenerationJob> {
+    return request<GenerationJob>(`/api/v1/generations/jobs/${jobId}/`);
+  },
+};

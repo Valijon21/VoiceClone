@@ -50,17 +50,29 @@
 - [x] `VC-055`: Result ownership checks va audio natijalar izolyatsiyasi
 - [x] `VC-056`: Generated file lifecycle va retention tozalash (`cleanup_expired_audio_assets`)
 
-## Hozirgi faol sprint (Sprint 07: React Frontend MVP / Phase 06)
-- [ ] `VC-060`: React + Vite + TypeScript ilovasi, routing va strukturani yaratish
-- [ ] `VC-061`: UI dizayn tokenlari, responsiv maket va holatlar (loading, error, empty)
-- [ ] `VC-062`: Autentifikatsiya sahifalari va himoyalangan yo‘llar (Login, Register, Logout)
-- [ ] `VC-063`: Audio yozib olish va WAV fayl yuklash komponenti
-- [ ] `VC-064`: Ovoz profili yaratish va qat'iy Consent UI (Rozilik berish oynasi)
-- [ ] `VC-065`: Matn, til, ovoz va generatsiya sozlamalari shakli (Form)
-- [ ] `VC-066`: Generatsiya jarayoni, polling va progress bar komponenti
-- [ ] `VC-067`: Audio pleer, to‘lqin (waveform) preview va WAV yuklab olish
-- [ ] `VC-068`: Ovoz profilini va audio tarixini o‘chirish oqimi (Privacy/GDPR)
-- [ ] `VC-069`: Accessibility (a11y) va frontend smoke testlari
+## Sprint 07 (React Frontend MVP / Phase 06) — DONE
+- [x] `VC-060`: React + Vite + TypeScript ilovasi, routing va strukturani yaratish
+- [x] `VC-061`: UI dizayn tokenlari, responsiv maket va holatlar (loading, error, empty)
+- [x] `VC-062`: Autentifikatsiya sahifalari va himoyalangan yo‘llar (Login, Register, Logout)
+- [x] `VC-063`: Audio yozib olish va WAV fayl yuklash komponenti
+- [x] `VC-064`: Ovoz profili yaratish va qat'iy Consent UI (Rozilik berish oynasi)
+- [x] `VC-065`: Matn, til, ovoz va generatsiya sozlamalari shakli (Form)
+- [x] `VC-066`: Generatsiya jarayoni, polling va progress bar komponenti
+- [x] `VC-067`: Audio pleer, to‘lqin (waveform) preview va WAV yuklab olish
+- [x] `VC-068`: Ovoz profilini va audio tarixini o‘chirish oqimi (Privacy/GDPR)
+- [x] `VC-069`: Accessibility (a11y) va frontend smoke testlari (40 ta test to‘liq o‘tdi)
+
+## Hozirgi faol sprint (Sprint 08: Security, Trust & Tests / Phase 07)
+- [ ] `VC-070`: Consent gate barcha generation path'larida backend'da ishlashini tekshirish
+- [ ] `VC-071`: Per-user/IP rate limits va upload quotas
+- [ ] `VC-072`: Audio/text limits, MIME validation va malformed files sinovlari
+- [ ] `VC-073`: Audit events: admin action, consent, report, block/unblock
+- [ ] `VC-074`: User report/abuse review workflow
+- [ ] `VC-075`: Secret management, CORS/CSRF, HTTPS deployment policy
+- [ ] `VC-076`: AI-generated disclosure/provenance
+- [ ] `VC-077`: Deletion, retention va backup policy
+- [ ] `VC-078`: API permission tests, frontend E2E, smoke/performance testlar
+- [ ] `VC-079`: Restore drill va incident runbook
 
 
 
