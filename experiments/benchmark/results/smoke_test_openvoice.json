@@ -1,0 +1,15 @@
+{
+  "model": "OpenVoice V2",
+  "backbone": "MeloTTS",
+  "target_language": "en",
+  "device_requested": "cpu",
+  "device_used": "cpu",
+  "status": "PASS",
+  "load_time_sec": 1.431,
+  "generation_time_sec": null,
+  "audio_duration_sec": null,
+  "rtf": null,
+  "peak_vram_mb": null,
+  "output_audio_path": null,
+  "errors": []
+}

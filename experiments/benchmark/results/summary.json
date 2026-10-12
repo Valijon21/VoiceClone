@@ -1,0 +1,64 @@
+{
+  "benchmark_session": "SPRINT_02_VOICE_MODEL_BENCHMARK",
+  "timestamp": "2026-10-11T23:23:00Z",
+  "environment": {
+    "os": "Windows-10-10.0.22631-SP0 AMD64",
+    "python": "3.11.9",
+    "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "vram_total_mb": 6144.0,
+    "driver_version": "581.29",
+    "cuda_supported": "13.0",
+    "disk_free_d_gb": 119.21,
+    "disk_free_c_gb": 4.90
+  },
+  "models": {
+    "VC-012_anadil_uzbek_tts": {
+      "model_id": "Anadilorg/Anadil_Uzbek_TTS",
+      "base_model": "openbmb/VoxCPM2",
+      "model_type": "Diffusion Autoregressive TTS (2B params)",
+      "target_language": "uz",
+      "license": {
+        "adapter": "MIT",
+        "base_model": "Apache-2.0",
+        "dataset": "NEEDS_REVIEW"
+      },
+      "resource_audit": {
+        "download_size_gb": 5.03,
+        "parameters": "2 Billion",
+        "vram_peak_estimate_mb": 6144.0,
+        "oom_risk_on_6gb_gpu": "HIGH"
+      },
+      "benchmark_status": "BLOCKED",
+      "reason": "Model weights are 5.03 GB (2B params) and require 5.5-6.5 GB VRAM in FP16, hitting the 6.0 GB hardware limit of RTX 3060 Laptop GPU. CPU inference requires 16GB system RAM with high RTF. Download held to preserve disk safety."
+    },
+    "VC-013_openvoice_v2": {
+      "model_id": "myshell-ai/OpenVoice",
+      "converter_checkpoint": "myshell-ai/OpenVoiceV2/converter",
+      "base_backbone": "MeloTTS",
+      "model_type": "Tone Color Converter",
+      "license": {
+        "converter_code": "MIT",
+        "converter_weights": "MIT",
+        "melotts": "MIT",
+        "commercial_ready": "YES"
+      },
+      "resource_audit": {
+        "download_size_mb": 338.0,
+        "vram_peak_estimate_mb": 2500.0,
+        "oom_risk_on_6gb_gpu": "NONE"
+      },
+      "language_capabilities": {
+        "en": "SUPPORTED (Native via MeloTTS English)",
+        "ru": "NOT_SUPPORTED (MeloTTS lacks Russian backbone)",
+        "uz": "NOT_SUPPORTED (MeloTTS lacks Uzbek backbone)"
+      },
+      "benchmark_status": "PARTIALLY_VERIFIED",
+      "reason": "OpenVoice V2 ToneColorConverter (131 MB) is verified and MIT licensed. English is native. Uzbek and Russian cannot be synthesized natively because OpenVoice is a voice converter, not an autonomous multi-lingual TTS model."
+    }
+  },
+  "artifacts": {
+    "reference_uzbek_audio": "experiments/benchmark/samples/uzbek_reference_1.wav",
+    "reference_english_audio": "experiments/benchmark/samples/english_reference_0.mp3",
+    "openvoice_converter_weights": "experiments/benchmark/openvoice/checkpoints_v2/converter/checkpoint.pth"
+  }
+}

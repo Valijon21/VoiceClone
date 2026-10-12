@@ -1,0 +1,18 @@
+{
+  "model": "Anadil Uzbek TTS",
+  "base_model": "openbmb/VoxCPM2",
+  "adapter": "Anadilorg/Anadil_Uzbek_TTS",
+  "target_language": "uz",
+  "device_requested": "cpu",
+  "device_used": null,
+  "status": "BLOCKED",
+  "load_time_sec": null,
+  "generation_time_sec": null,
+  "audio_duration_sec": null,
+  "rtf": null,
+  "peak_vram_mb": null,
+  "output_audio_path": null,
+  "errors": [
+    "Missing basic dependency: No module named 'torch'"
+  ]
+}

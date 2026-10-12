@@ -1,0 +1,54 @@
+{
+  "os": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "system": "Windows",
+    "release": "10",
+    "architecture": "AMD64"
+  },
+  "python": {
+    "version": "3.11.9",
+    "executable": "C:\\Users\\nout.plus\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"
+  },
+  "disk": {
+    "C:": {
+      "total_gb": 146.75,
+      "used_gb": 141.85,
+      "free_gb": 4.9
+    },
+    "D:": {
+      "total_gb": 330.08,
+      "used_gb": 210.87,
+      "free_gb": 119.21
+    }
+  },
+  "gpu": {
+    "gpu_detected": true,
+    "name": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "vram_total_mb": 6144.0,
+    "driver_version": "581.29",
+    "cuda_version_supported": "13.0"
+  },
+  "torch": {
+    "installed": true,
+    "version": "2.9.1+cpu",
+    "cuda_available": false,
+    "torch_cuda_version": null,
+    "device_name": null
+  },
+  "internet": {
+    "huggingface": {
+      "reachable": true,
+      "status_code": 200
+    },
+    "github": {
+      "reachable": true,
+      "status_code": 200
+    }
+  },
+  "git": {
+    "branch": "master",
+    "remote": "https://github.com/Valijon21/VoiceClone.git",
+    "commit": "No commits yet",
+    "clean": false
+  }
+}
