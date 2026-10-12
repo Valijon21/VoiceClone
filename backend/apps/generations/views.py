@@ -10,6 +10,7 @@ class GenerationJobListCreateView(generics.ListCreateAPIView):
     """List synthesis jobs or enqueue a new generation request."""
 
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = "generation"
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -35,7 +36,11 @@ class GenerationJobListCreateView(generics.ListCreateAPIView):
                 pass
 
         output_serializer = GenerationJobSerializer(job)
-        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+        headers = {
+            "X-AI-Generated": "true",
+            "X-VoiceClone-Ethical-Gate": "STRICT",
+        }
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class GenerationJobDetailView(generics.RetrieveDestroyAPIView):

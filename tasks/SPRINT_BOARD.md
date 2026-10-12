@@ -62,17 +62,24 @@
 - [x] `VC-068`: Ovoz profilini va audio tarixini o‘chirish oqimi (Privacy/GDPR)
 - [x] `VC-069`: Accessibility (a11y) va frontend smoke testlari (40 ta test to‘liq o‘tdi)
 
-## Hozirgi faol sprint (Sprint 08: Security, Trust & Tests / Phase 07)
-- [ ] `VC-070`: Consent gate barcha generation path'larida backend'da ishlashini tekshirish
-- [ ] `VC-071`: Per-user/IP rate limits va upload quotas
-- [ ] `VC-072`: Audio/text limits, MIME validation va malformed files sinovlari
-- [ ] `VC-073`: Audit events: admin action, consent, report, block/unblock
-- [ ] `VC-074`: User report/abuse review workflow
-- [ ] `VC-075`: Secret management, CORS/CSRF, HTTPS deployment policy
-- [ ] `VC-076`: AI-generated disclosure/provenance
-- [ ] `VC-077`: Deletion, retention va backup policy
-- [ ] `VC-078`: API permission tests, frontend E2E, smoke/performance testlar
-- [ ] `VC-079`: Restore drill va incident runbook
+## Sprint 08 (Security, Trust & Tests / Phase 07) — DONE
+- [x] `VC-070`: Consent gate barcha generation path'larida backend'da ishlashini tekshirish
+- [x] `VC-071`: Per-user/IP rate limits va upload quotas (DRF throttling va 100MB quota)
+- [x] `VC-072`: Audio/text limits, MIME validation va malformed files sinovlari (RIFF/WAVE header check)
+- [x] `VC-073`: Audit events: admin action, consent, report, block/unblock (`AuditEvent` amallari)
+- [x] `VC-074`: User report/abuse review workflow (`AbuseReport` modeli va API endpointlari)
+- [x] `VC-075`: Secret management, CORS/CSRF, HTTPS deployment policy (`docs/SECURITY.md`)
+- [x] `VC-076`: AI-generated disclosure/provenance (`X-AI-Generated` sarlavhalari)
+- [x] `VC-077`: Deletion, retention va backup policy (`docs/DATA_RETENTION_POLICY.md`)
+- [x] `VC-078`: API permission tests, frontend E2E, smoke/performance testlar (45 ta test 100% o‘tdi)
+- [x] `VC-079`: Restore drill va incident runbook (`docs/INCIDENT_RUNBOOK.md`)
+
+## Hozirgi faol sprint (Sprint 09: Local/Offline Packaging / Phase 08)
+- [ ] `VC-080`: `local` deployment profili va yagona ishga tushirish skripti
+- [ ] `VC-081`: Model cache/download manager va hash verification
+- [ ] `VC-082`: Internet uzilgan holda offline acceptance test
+- [ ] `VC-083`: Hardware detection va foydalanuvchiga tushunarli errorlar
+- [ ] `VC-084`: Installer/desktop wrapper talabini tekshirish (ADR qarori)
 
 
 

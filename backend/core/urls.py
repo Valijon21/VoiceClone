@@ -51,4 +51,5 @@ urlpatterns = [
     path("api/v1/voices/", include("apps.voices.urls", namespace="voices")),
     path("api/v1/audio/", include("apps.audio.urls", namespace="audio")),
     path("api/v1/generations/", include("apps.generations.urls", namespace="generations")),
+    path("api/v1/audit/", include("apps.audit.urls", namespace="audit")),
 ]

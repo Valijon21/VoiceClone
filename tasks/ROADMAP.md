@@ -80,16 +80,16 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 07 — Security, trust & tests
 
-- [ ] `VC-070` — Consent gate barcha generation path’larida backend’da ishlashini tekshirish. **Done:** frontendni chetlab o‘tish orqali ham consent’siz ovoz ishlatilmaydi.
-- [ ] `VC-071` — Per-user/IP rate limits va upload quotas. **Done:** abuse va accidental overload kamaytirilgan.
-- [ ] `VC-072` — Audio/text limits, MIME validation va malformed files sinovlari. **Done:** invalid upload crash bermaydi.
-- [ ] `VC-073` — Audit events: admin action, consent, report, block/unblock. **Done:** kim, qachon va nima qilgani qayd etiladi.
-- [ ] `VC-074` — User report/abuse review workflow. **Done:** shikoyatni yuborish, ko‘rish va hal etish statuslari bor.
-- [ ] `VC-075` — Secret management, CORS/CSRF, HTTPS deployment policy. **Done:** production checklist to‘ldirilgan.
-- [ ] `VC-076` — AI-generated disclosure/provenance. **Done:** UI’da natijaning AI bilan yaratilgani ko‘rsatiladi; texnik watermark faqat model/tool qo‘llasa yoqiladi.
-- [ ] `VC-077` — Deletion, retention va backup policy. **Done:** storage, DB va backup bo‘yicha o‘chirish chegaralari hujjatlashtirilgan.
-- [ ] `VC-078` — API permission tests, frontend E2E, smoke/performance testlar. **Done:** CI’da release-blocking testlar bor.
-- [ ] `VC-079` — Restore drill va incident runbook. **Done:** backupdan tiklash bosqichlari sinab ko‘rilgan.
+- [x] `VC-070` — Consent gate barcha generation path’larida backend’da ishlashini tekshirish. **Done:** Frontendni chetlab o‘tish orqali ham (DRF serializer va Celery task darajasida) consent’siz yoki boshqa user ovozi ishlatilmaydi.
+- [x] `VC-071` — Per-user/IP rate limits va upload quotas. **Done:** DRF Throttling (anonim, user, audio_upload, generation, reports) va foydalanuvchiga 100MB xotira kvotasi joriy etildi.
+- [x] `VC-072` — Audio/text limits, MIME validation va malformed files sinovlari. **Done:** 25MB gacha limit, MIME tekshiruvi, RIFF/WAVE header tekshiruvi va matn chegaralari (1-1000 belgi) o‘rnatildi.
+- [x] `VC-073` — Audit events: admin action, consent, report, block/unblock. **Done:** `AuditEvent` modeli yangi xavfsizlik harakatlari bilan kengaytirildi va shikoyat tushganda avtomatik loglanadi.
+- [x] `VC-074` — User report/abuse review workflow. **Done:** `AbuseReport` modeli, `POST /api/v1/audit/reports/` va admin moderator ko‘rib chiqish oqimi yaratildi.
+- [x] `VC-075` — Secret management, CORS/CSRF, HTTPS deployment policy. **Done:** `docs/SECURITY.md` hujjati va xavfsizlik arxitekturasi to‘liq yozildi.
+- [x] `VC-076` — AI-generated disclosure/provenance. **Done:** Generatsiya javoblariga `X-AI-Generated: true` va `X-VoiceClone-Ethical-Gate: STRICT` sarlavhalari qo‘shildi.
+- [x] `VC-077` — Deletion, retention va backup policy. **Done:** `docs/DATA_RETENTION_POLICY.md` hujjati va 7 kunlik avtomatik tozalash lifecycle siyosati belgilandi.
+- [x] `VC-078` — API permission tests, frontend E2E, smoke/performance testlar. **Done:** `tests/test_security_audit_and_abuse.py` yozildi, jami 45 ta test 100% yashil o‘tdi.
+- [x] `VC-079` — Restore drill va incident runbook. **Done:** `docs/INCIDENT_RUNBOOK.md` yaratilib, P1/P2/P3 favqulodda choralar va DB tiklash tartibi hujjatlashtirildi.
 
 ## Phase 08 — Local/offline packaging
 

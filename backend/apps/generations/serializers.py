@@ -74,6 +74,17 @@ class CreateGenerationJobSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_input_text(self, value):
+        """Enforce input text boundaries."""
+        text = value.strip()
+        if not text:
+            raise serializers.ValidationError("Input text cannot be blank or whitespace only.")
+        if len(text) > 1000:
+            raise serializers.ValidationError(
+                "Input text exceeds maximum limit of 1000 characters."
+            )
+        return text
+
     def validate(self, attrs):
         user = self.context["request"].user
         voice_profile = attrs.get("voice_profile")
