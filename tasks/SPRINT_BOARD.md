@@ -10,10 +10,18 @@
 - [x] `VC-016`: Hardware profiling va cold start baholash (`docs/BENCHMARK_RESULTS.md`)
 - [x] `VC-017`: MVP model strategiyasi va qarorini yozish (`docs/DECISIONS/0001-mvp-model-strategy.md` ADR-0001)
 
-## Hozirgi faol sprint (Sprint 03: Monorepo & Developer Setup / Phase 02)
-- [ ] `VC-020`: Monorepo strukturasi (`backend/`, `frontend/`, `inference/`, `infra/`, `docs/`)
-- [ ] `VC-021`: Python versiyasi va dependency boshqaruv siyosati
-- [ ] `VC-022`: `.env.example` va xavfsizlik/maxfiylik shartlari
-- [ ] `VC-023`: Ruff, pytest va CI workflow (`.github/workflows/ci.yml`)
-- [ ] `VC-024`: Docker Compose developer stack
-- [ ] `VC-025`: README: Windows developer setup va Linux deploy farqlari
+## Sprint 03 (Monorepo & Developer Setup / Phase 02) — DONE
+- [x] `VC-020`: Monorepo strukturasi (`backend/`, `frontend/`, `inference/`, `infra/`, `docs/`)
+- [x] `VC-021`: Python versiyasi (3.11.9) va dependency pin siyosati
+- [x] `VC-022`: `.env.example` barcha servislar uchun kengaytirilgan konfiguratsiya
+- [x] `VC-023`: Ruff, pytest, CI workflow (`.github/workflows/ci.yml`) va testlar
+- [x] `VC-024`: Docker Compose developer stack (`infra/docker-compose.yml`, Dockerfile'lar)
+- [x] `VC-025`: README: Windows dev va Linux deploy bo‘yicha to‘liq qo‘llanma
+
+## Hozirgi faol sprint (Sprint 04: AI Inference Service / Phase 03)
+- [ ] `VC-030`: `VoiceModelAdapter` interface'ini belgilash (`capabilities`, `validate_reference`, `synthesize`, `health`)
+- [ ] `VC-031`: Model registry va config: model version, languages, license gate
+- [ ] `VC-032`: FastAPI inference service loyihasini yaratish (`GET /health`, `POST /synthesize`)
+- [ ] `VC-033`: Audio upload validation & normalization
+- [ ] `VC-034`: Matn normalizatsiyasi (o‘zbek apostroflari, raqamlar)
+- [ ] `VC-035`: Chunking moduli va birlashtirish

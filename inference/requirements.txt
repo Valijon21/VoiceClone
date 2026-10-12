@@ -1,0 +1,23 @@
+# VoiceClone Inference Service Requirements
+# Python 3.11 Pinned Dependencies
+
+# FastAPI & ASGI Server
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+python-multipart==0.0.20
+
+# Audio Processing & DSP
+soundfile==0.13.1
+librosa==0.10.2.post1
+scipy==1.15.2
+numpy==1.26.4
+
+# HTTP & Utilities
+httpx==0.28.1
+python-dotenv==1.0.1
+
+# Quality, Linting & Testing
+ruff==0.9.6
+pytest==8.3.4
+pytest-asyncio==0.25.3

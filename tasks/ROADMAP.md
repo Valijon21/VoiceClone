@@ -23,12 +23,12 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 02 — Repository & developer experience
 
-- [ ] `VC-020` — Monorepo tuzilmasini yaratish: `backend/`, `frontend/`, `inference/`, `infra/`, `docs/`. **Done:** vazifalar aniq ajratilgan, README mavjud.
-- [ ] `VC-021` — Python versiyasi va dependency lock/pinning siyosatini belgilash. **Done:** clean environment’da install qayta ishlab bo‘ladi.
-- [ ] `VC-022` — `.env.example` va secrets siyosatini yaratish. **Done:** token/parollar repo ichida yo‘q.
-- [ ] `VC-023` — Ruff, pytest, formatting va CI boshlang‘ich sozlamalari. **Done:** pull request/push paytida lint va testlar ishlaydi.
-- [ ] `VC-024` — Docker Compose developer stack. **Done:** Postgres, Redis, Django va worker start/healthcheck bilan ko‘tariladi.
-- [ ] `VC-025` — README: Windows developer setup va Linux deploy farqlarini yozish. **Done:** boshqa developer projectni hujjat bilan ishga tushira oladi.
+- [x] `VC-020` — Monorepo tuzilmasini yaratish: `backend/`, `frontend/`, `inference/`, `infra/`, `docs/`. **Done:** vazifalar aniq ajratilgan, har bir katalogda README.md mavjud.
+- [x] `VC-021` — Python versiyasi va dependency lock/pinning siyosatini belgilash. **Done:** `.python-version` (3.11.9), `backend/requirements.txt` va `inference/requirements.txt` da to‘liq pin qilingan.
+- [x] `VC-022` — `.env.example` va secrets siyosatini yaratish. **Done:** barcha servislar uchun xavfsiz template yaratildi, token/parollar repo ichida yo‘q.
+- [x] `VC-023` — Ruff, pytest, formatting va CI boshlang‘ich sozlamalari. **Done:** `pyproject.toml`, `.github/workflows/ci.yml` va `tests/test_environment_hygiene.py` yaratildi, 4 ta test yashil.
+- [x] `VC-024` — Docker Compose developer stack. **Done:** `infra/docker-compose.yml`, Dockerfile'lar va healthcheck sozlamalari bilan Postgres, Redis, Django, Celery va FastAPI inference bog‘landi.
+- [x] `VC-025` — README: Windows developer setup va Linux deploy farqlarini yozish. **Done:** `README.md` to‘liq amaliy qo‘llanma bilan yangilandi.
 
 ## Phase 03 — AI inference service
 

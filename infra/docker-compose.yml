@@ -1,0 +1,125 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: voiceclone-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-voiceclone}
+      POSTGRES_USER: ${POSTGRES_USER:-voiceclone_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voiceclone_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-voiceclone_user} -d ${POSTGRES_DB:-voiceclone}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - voiceclone-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: voiceclone-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - voiceclone-net
+
+  inference:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.inference
+    container_name: voiceclone-inference
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - INFERENCE_HOST=0.0.0.0
+      - INFERENCE_PORT=8001
+      - INFERENCE_DEVICE=cpu
+      - INFERENCE_BOUNDED_CONCURRENCY=1
+    volumes:
+      - ../inference:/app/inference
+      - media_data:/var/media
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - voiceclone-net
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    container_name: voiceclone-backend
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-insecure-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-voiceclone_user}:${POSTGRES_PASSWORD:-voiceclone_dev_password}@postgres:5432/${POSTGRES_DB:-voiceclone}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - INFERENCE_BASE_URL=http://inference:8001
+      - MEDIA_ROOT=/var/media
+    volumes:
+      - ../backend:/app/backend
+      - media_data:/var/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - voiceclone-net
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    container_name: voiceclone-worker
+    restart: unless-stopped
+    command: celery -A core worker -l info
+    environment:
+      - DJANGO_DEBUG=False
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-dev-insecure-secret-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-voiceclone_user}:${POSTGRES_PASSWORD:-voiceclone_dev_password}@postgres:5432/${POSTGRES_DB:-voiceclone}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - INFERENCE_BASE_URL=http://inference:8001
+      - MEDIA_ROOT=/var/media
+    volumes:
+      - ../backend:/app/backend
+      - media_data:/var/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - voiceclone-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
+
+networks:
+  voiceclone-net:
+    driver: bridge

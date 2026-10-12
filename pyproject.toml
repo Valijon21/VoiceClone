@@ -1,0 +1,61 @@
+[project]
+name = "voiceclone"
+version = "0.1.0"
+description = "Ethical, consent-driven voice synthesis and cloning platform"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = [
+    ".git",
+    ".cache",
+    ".venv",
+    "venv",
+    ".agent",
+    ".agents",
+    "__pycache__",
+    "migrations",
+    "node_modules",
+    "experiments",
+    "var",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501", # Line length handled by formatter
+    "B008", # Do not perform function call in argument defaults (FastAPI Depends)
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["backend", "inference"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = [
+    "tests",
+    "backend",
+    "inference",
+]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra -q --strict-markers"
+asyncio_mode = "auto"
+markers = [
+    "unit: Pure unit tests that run in milliseconds without external services",
+    "integration: Integration tests requiring database or network",
+    "gpu: Tests requiring GPU hardware (skipped in standard CI)",
+]

@@ -1,0 +1,31 @@
+# VoiceClone Backend Requirements
+# Python 3.11 Pinned Dependencies
+
+# Django Core & REST Framework
+Django==5.1.6
+djangorestframework==3.15.2
+django-cors-headers==4.7.0
+django-environ==0.12.0
+
+# Database Driver (PostgreSQL 16)
+psycopg[binary]==3.2.4
+
+# Task Queue & Cache (Redis 7)
+celery==5.4.0
+redis==5.2.1
+
+# Audio Utilities (Lightweight header validation only, no GPU)
+soundfile==0.13.1
+
+# HTTP client to communicate with FastAPI Inference Service
+httpx==0.28.1
+
+# Security & Utilities
+cryptography==44.0.1
+python-dotenv==1.0.1
+
+# Quality, Linting & Testing
+ruff==0.9.6
+pytest==8.3.4
+pytest-django==4.9.0
+pytest-asyncio==0.25.3

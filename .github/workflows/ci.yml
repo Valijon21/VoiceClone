@@ -1,0 +1,74 @@
+name: VoiceClone CI Quality & Test Gate
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  lint-and-validate:
+    name: Code Quality & Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Linting Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff==0.9.6 pytest==8.3.4
+
+      - name: Check Formatting (Ruff)
+        run: |
+          ruff format --check .
+
+      - name: Run Linter (Ruff)
+        run: |
+          ruff check .
+
+      - name: Verify Secret & Git Hygiene
+        run: |
+          # Verify .env is not committed
+          if git ls-files | grep -E '^\.env$'; then
+            echo "ERROR: Real .env file tracked in Git!"
+            exit 1
+          fi
+          # Verify no model weights (.pth, .safetensors, .ckpt) tracked in Git
+          if git ls-files | grep -E '\.(pth|pt|ckpt|safetensors)$'; then
+            echo "ERROR: Heavy model weights tracked in Git!"
+            exit 1
+          fi
+          echo "Git hygiene verified successfully."
+
+  smoke-tests:
+    name: Smoke & Unit Tests
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -r inference/requirements.txt
+
+      - name: Run Test Suite
+        run: |
+          pytest -m "not gpu and not integration" --disable-warnings
