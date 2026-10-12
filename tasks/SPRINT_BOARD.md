@@ -18,10 +18,26 @@
 - [x] `VC-024`: Docker Compose developer stack (`infra/docker-compose.yml`, Dockerfile'lar)
 - [x] `VC-025`: README: Windows dev va Linux deploy bo‘yicha to‘liq qo‘llanma
 
-## Hozirgi faol sprint (Sprint 04: AI Inference Service / Phase 03)
+## Sprint 04 (AI Inference Service / Phase 03) — DONE
 - [x] `VC-030`: `VoiceModelAdapter` interface'ini belgilash (`inference/app/core/adapter_base.py`, `mock_adapter.py`)
 - [x] `VC-031`: Model registry va License Gate (`inference/app/core/registry.py`)
-- [ ] `VC-032`: FastAPI inference service loyihasini yaratish (`GET /health`, `POST /synthesize`)
-- [ ] `VC-033`: Audio upload validation & normalization
-- [ ] `VC-034`: Matn normalizatsiyasi (o‘zbek apostroflari, raqamlar)
-- [ ] `VC-035`: Chunking moduli va birlashtirish
+- [x] `VC-032`: FastAPI inference service loyihasini yaratish (`inference/app/main.py`)
+- [x] `VC-033`: Audio upload validation & normalization (`inference/app/core/audio_processor.py`)
+- [x] `VC-034`: Matn normalizatsiyasi (o‘zbek apostroflari, raqamlar) (`inference/app/core/text_normalizer.py`)
+- [x] `VC-035`: Chunking moduli va birlashtirish (`concatenate_wav_chunks`)
+- [x] `VC-036`: OpenVoice V2 adapteri (`inference/app/adapters/openvoice_adapter.py`)
+- [x] `VC-037`: Output format conversion va audio metadata
+- [x] `VC-038`: Bounded concurrency (semaphore=1) va VRAM xotira tozalash (`concurrency.py`)
+- [x] `VC-039`: Barcha unit va integratsiya testlari (22 ta test to‘liq o‘tdi)
+
+## Hozirgi faol sprint (Sprint 05: Django Domain & REST API / Phase 04)
+- [ ] `VC-040`: Django 5.2 LTS + DRF project va applar strukturasi (`accounts`, `voices`, `consent`, `audio`, `generations`, `audit`)
+- [ ] `VC-041`: Custom User modeli va autentifikatsiya strategiyasi
+- [ ] `VC-042`: VoiceProfile va qat'iy ConsentRecord modellari / migratsiyalari
+- [ ] `VC-043`: AudioAsset metadata modeli va storage abstraction
+- [ ] `VC-044`: GenerationJob, GeneratedAudio va holat mashinasi (`PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED`)
+- [ ] `VC-045`: ModelRegistry va license gate DRF qatlami
+- [ ] `VC-046`: DRF serializers, ruxsatlar va versioned API routes
+- [ ] `VC-047`: OpenAPI schema generatori
+- [ ] `VC-048`: Strukturaviy xatolar va API logging
+

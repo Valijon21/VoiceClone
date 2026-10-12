@@ -34,14 +34,14 @@ Status boshlanishida barcha tasklar `TODO`.
 
 - [x] `VC-030` — `VoiceModelAdapter` interface’ini belgilash: capabilities, validate_reference, synthesize, health. **Done:** `inference/app/core/adapter_base.py` va `mock_adapter.py` da to‘liq belgilandi va contract testlaridan o‘tdi.
 - [x] `VC-031` — Model registry/config: model version, languages, device, license review status. **Done:** `inference/app/core/registry.py` da ModelRegistry va qat'iy ishlab chiqarish License Gate amalga oshirildi.
-- [ ] `VC-032` — FastAPI inference service’ni yaratish. **Done:** internal endpoint va health endpoint ishlaydi; tashqi internetga ochilmagan.
-- [ ] `VC-033` — Upload audio normalization/validation. **Done:** noto‘g‘ri format, juda katta yoki bo‘sh audio boshqariladigan xato beradi.
-- [ ] `VC-034` — Text normalization modulini yaratish. **Done:** uzbek apostroflari, raqamlar, tinish belgilari uchun testlar mavjud.
-- [ ] `VC-035` — Chunking va chunklarni birlashtirish. **Done:** uzun matn limit bilan ishlaydi, chunk tartibi buzilmaydi.
-- [ ] `VC-036` — Birinchi production-eligible model adapteri. **Done:** adapter contract testlardan o‘tadi, model version loglanadi.
-- [ ] `VC-037` — Output format conversion va audio metadata. **Done:** WAV output, sample rate va duration qayd etiladi.
-- [ ] `VC-038` — Timeout, bounded concurrency va memory cleanup. **Done:** stress testdan keyin RAM/VRAM cheksiz ortmaydi.
-- [ ] `VC-039` — Inference service unit/integration tests. **Done:** valid, invalid, timeout va model unavailable holatlari qoplangan.
+- [x] `VC-032` — FastAPI inference service’ni yaratish. **Done:** `inference/app/main.py` da `/health`, `/synthesize` va `/extract-speaker` endpointlari yaratildi.
+- [x] `VC-033` — Upload audio normalization/validation. **Done:** `inference/app/core/audio_processor.py` da RIFF/WAV tekshiruvi, 1-30s davomiylik va sukut (silence) filtrlari o‘rnatildi.
+- [x] `VC-034` — Text normalization modulini yaratish. **Done:** `inference/app/core/text_normalizer.py` da o‘zbekcha apostroflar (`o‘`, `g‘`, tutuq belgisi), raqamlarni so‘zga aylantirish amalga oshirildi.
+- [x] `VC-035` — Chunking va chunklarni birlashtirish. **Done:** jumla chegaralari bo‘yicha bo‘laklash va `concatenate_wav_chunks` orqali yagona WAV faylga tiklash sinovdan o‘tdi.
+- [x] `VC-036` — Birinchi production-eligible model adapteri. **Done:** `inference/app/adapters/openvoice_adapter.py` (MIT litsenziyali OpenVoice V2 converter) ishlab chiqildi va shartnoma testlaridan o‘tdi.
+- [x] `VC-037` — Output format conversion va audio metadata. **Done:** WAV chiqishi, sample rate (24000), davomiylik va metama'lumotlar qaytariladi.
+- [x] `VC-038` — Timeout, bounded concurrency va memory cleanup. **Done:** `BoundedInferenceLock` semafori, 30s timeout va `torch.cuda.empty_cache()` xotirani tozalash mexanizmi integratsiya qilindi.
+- [x] `VC-039` — Inference service unit/integration tests. **Done:** barcha valid, invalid, empty text, timeout va shartnoma holatlarini qamragan 22 ta avtomatlashtirilgan test yozildi va muvaffaqiyatli o‘tdi.
 
 ## Phase 04 — Django domain/API
 

@@ -91,3 +91,28 @@ def test_registry_not_found_raises():
     registry = ModelRegistry(is_production=False)
     with pytest.raises(ModelNotFoundError):
         registry.get_adapter("non_existent_adapter_id")
+
+
+@pytest.mark.asyncio
+async def test_openvoice_v2_adapter_contract():
+    """Verify OpenVoiceV2Adapter satisfies contract and passes license gate."""
+    from inference.app.adapters.openvoice_adapter import OpenVoiceV2Adapter
+
+    adapter = OpenVoiceV2Adapter(device="cpu")
+    assert adapter.adapter_id == "openvoice_v2"
+    assert adapter.capabilities["license"] == "MIT"
+
+    registry = ModelRegistry(is_production=True)
+    # Must pass production license gate because OpenVoice V2 is VERIFIED MIT
+    registry.register(
+        adapter=adapter,
+        license_name="MIT",
+        license_status="VERIFIED",
+        commercial_approved=True,
+    )
+    assert registry.get_adapter("openvoice_v2") is adapter
+
+    # Test synthesis
+    wav, meta = await adapter.synthesize(text="Hello world", language="en")
+    assert isinstance(wav, bytes)
+    assert meta["adapter_id"] == "openvoice_v2"
