@@ -1,11 +1,17 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
 import { AudioAsset } from "../types";
 import { encodeAudioBufferToWav } from "../utils/wavEncoder";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { logger } from "../utils/logger";
 
-// Studio recording engine using MediaRecorder + Web Audio API (with zero-feedback Analyser)
+// Studio recording engine with Device Selector, Live Mic Tester, and MediaRecorder
+
+interface AudioDeviceOption {
+  deviceId: string;
+  label: string;
+  isVirtual: boolean;
+}
 
 interface VoiceRecorderProps {
   onAudioUploaded: (asset: AudioAsset) => void;
@@ -21,6 +27,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
+  // Audio Device selection & Live Mic Meter states
+  const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
+  const [isTestingMic, setIsTestingMic] = useState(false);
+  const [testVolume, setTestVolume] = useState(0); // 0 - 100%
+  const [zeroSignalWarning, setZeroSignalWarning] = useState(false);
+
   // Audio streams & Web Audio API refs
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -31,10 +44,66 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
   const timerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Live tester refs
+  const testStreamRef = useRef<MediaStream | null>(null);
+  const testCtxRef = useRef<AudioContext | null>(null);
+  const testAnimFrameRef = useRef<number | null>(null);
+
+  // Enumerate available microphones
+  const loadAudioDevices = useCallback(async (promptPermission = false) => {
+    try {
+      if (promptPermission) {
+        // Quick permission prompt to get actual device labels
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach((t) => t.stop());
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices
+        .filter((d) => d.kind === "audioinput")
+        .map((d, index) => {
+          const label = d.label || `Mikrofon #${index + 1}`;
+          const isVirtual = /voicemod|virtual|stereo mix|aux/i.test(label);
+          return {
+            deviceId: d.deviceId,
+            label,
+            isVirtual,
+          };
+        });
+
+      // Sort: Real physical microphones first, virtual/mix at the end
+      audioInputs.sort((a, b) => {
+        if (a.isVirtual === b.isVirtual) return 0;
+        return a.isVirtual ? 1 : -1;
+      });
+
+      setAudioDevices(audioInputs);
+
+      // Auto-select preferred device if current selection is empty or virtual
+      if (audioInputs.length > 0) {
+        setSelectedDeviceId((prev) => {
+          if (prev && audioInputs.some((d) => d.deviceId === prev)) {
+            return prev;
+          }
+          // Pick the first non-virtual device if available
+          const preferred = audioInputs.find((d) => !d.isVirtual) || audioInputs[0];
+          return preferred.deviceId;
+        });
+      }
+    } catch (err) {
+      logger.warn("Failed to enumerate audio input devices", { error: String(err) });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAudioDevices(false);
+  }, [loadAudioDevices]);
+
   // Clean up audio streams and object URLs on unmount
   useEffect(() => {
     return () => {
       cleanupAudioSession();
+      stopMicTest();
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
@@ -50,7 +119,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       try {
         mediaRecorderRef.current.stop();
       } catch {
-        // Ignored if already stopped
+        // Ignored
       }
       mediaRecorderRef.current = null;
     }
@@ -69,10 +138,94 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
     analyserRef.current = null;
   };
 
+  // Live Microphone Test (VU Meter)
+  const stopMicTest = () => {
+    if (testAnimFrameRef.current) {
+      cancelAnimationFrame(testAnimFrameRef.current);
+      testAnimFrameRef.current = null;
+    }
+    if (testStreamRef.current) {
+      testStreamRef.current.getTracks().forEach((t) => t.stop());
+      testStreamRef.current = null;
+    }
+    if (testCtxRef.current && testCtxRef.current.state !== "closed") {
+      testCtxRef.current.close().catch(() => {});
+      testCtxRef.current = null;
+    }
+    setIsTestingMic(false);
+    setTestVolume(0);
+  };
+
+  const startMicTest = async () => {
+    stopMicTest();
+    cleanupAudioSession();
+    setUploadError(null);
+
+    try {
+      const constraints: MediaStreamConstraints = {
+        audio: selectedDeviceId
+          ? {
+              deviceId: { exact: selectedDeviceId },
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            }
+          : {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      testStreamRef.current = stream;
+
+      // Update devices list with fresh labels if needed
+      loadAudioDevices(false);
+
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      testCtxRef.current = audioCtx;
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      const pcmData = new Float32Array(analyser.fftSize);
+
+      const checkVolume = () => {
+        analyser.getFloatTimeDomainData(pcmData);
+        let sumSquares = 0;
+        let peak = 0;
+        for (let i = 0; i < pcmData.length; i++) {
+          const val = Math.abs(pcmData[i]);
+          if (val > peak) peak = val;
+          sumSquares += val * val;
+        }
+        const rms = Math.sqrt(sumSquares / pcmData.length);
+        // Exponential gain curve to display intuitive 0-100% volume
+        const computedPercent = Math.min(100, Math.round(Math.pow(rms, 0.6) * 160));
+        setTestVolume(computedPercent);
+
+        testAnimFrameRef.current = requestAnimationFrame(checkVolume);
+      };
+
+      setIsTestingMic(true);
+      checkVolume();
+    } catch (err) {
+      logger.error("Failed to start mic test", err);
+      setUploadError("Mikrofonni sinab ko'rishda xatolik yuz berdi. Qurilma ruxsatini tekshiring.");
+      stopMicTest();
+    }
+  };
+
   // Start live microphone recording with hardware MediaRecorder + AnalyserNode
   const startRecording = async () => {
+    stopMicTest();
     setUploadError(null);
     setUploadSuccess(null);
+    setZeroSignalWarning(false);
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -82,14 +235,32 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
     recordedChunksRef.current = [];
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: true,
-        },
-      });
+      const constraints: MediaStreamConstraints = {
+        audio: selectedDeviceId
+          ? {
+              deviceId: { exact: selectedDeviceId },
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            }
+          : {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       mediaStreamRef.current = stream;
+
+      // Check track properties
+      const track = stream.getAudioTracks()[0];
+      if (track) {
+        logger.info(`Microphone track active: "${track.label}" (muted=${track.muted}, readyState=${track.readyState})`);
+        if (track.muted) {
+          setUploadError("Diqqat: Ushbu mikrofon operatsion tizimda 'MUTED' (o'chirilgan). Windows sozlamalari yoki klaviaturadagi mikrofon tugmasini tekshiring.");
+        }
+      }
 
       // 1. Setup Web Audio API exclusively for the real-time visualizer
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -103,11 +274,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.65;
+      analyser.smoothingTimeConstant = 0.55;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      // Connect analyser to a silent gain node so the audio graph stays active
+      // Connect analyser to silent gain node so Web Audio graph runs actively
       // without looping back audio to speakers (which causes echo cancellation muting)
       const muteGain = audioCtx.createGain();
       muteGain.gain.value = 0;
@@ -115,7 +286,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
       muteGain.connect(audioCtx.destination);
       muteGainRef.current = muteGain;
 
-      // 2. Setup standard, reliable MediaRecorder
+      // 2. Setup standard MediaRecorder
       let mimeType = "";
       const candidates = [
         "audio/webm;codecs=opus",
@@ -149,10 +320,10 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
         setRecordSeconds((prev) => prev + 1);
       }, 1000);
 
-      logger.info(`Microphone recording started with MediaRecorder (${mimeType || "default"})`);
+      logger.info(`Microphone recording started with MediaRecorder (${mimeType || "default"}) using device "${track?.label || "default"}"`);
     } catch (err: unknown) {
       logger.error("Failed to access microphone", err);
-      setUploadError("Mikrofonga ulanishda xatolik yuz berdi. Iltimos, brauzerda mikrofon ruxsatini yoqing.");
+      setUploadError("Mikrofonga ulanishda xatolik yuz berdi. Iltimos, brauzerda mikrofon ruxsatini yoqing yoki boshqa mikrofonni tanlang.");
       cleanupAudioSession();
       setIsRecording(false);
     }
@@ -214,8 +385,14 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
         const url = URL.createObjectURL(wavBlob);
         setAudioUrl(url);
 
-        if (maxPeak < 0.01) {
-          setUploadError("Diqqat: Ovoz signali juda past yoki mikrofonda ovoz bo'lmadi. Sozlamalarni tekshiring va balandroq gapiring.");
+        if (maxPeak < 0.005) {
+          setZeroSignalWarning(true);
+          setUploadError(
+            "Diqqat: Ovoz signali mutlaq 0 bo'ldi. Tanlangan mikrofoningiz o'chiq bo'lishi yoki virtual (Voicemod) qurilma tanlangan bo'lishi mumkin. Iltimos, pastdagi mikrofon tanlovidan boshqasini tanlang."
+          );
+        } else {
+          setZeroSignalWarning(false);
+          setUploadError(null);
         }
 
         logger.info(`WAV encoded successfully: ${wavBlob.size} bytes, ${durationSec}s at ${decodedBuffer.sampleRate}Hz`);
@@ -296,13 +473,141 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onAudioUploaded })
         <span className="badge badge-indigo">16-bit PCM WAV (Studio)</span>
       </div>
 
-      <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1.25rem" }}>
+      <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
         Ovoz klonlash sifati yuqori bo‘lishi uchun 5–15 soniyalik shovqinsiz va aniq gapirilgan audio tavsiya etiladi.
       </p>
 
+      {/* Hardware Microphone Device Selector Bar */}
+      <div
+        style={{
+          padding: "0.85rem 1rem",
+          borderRadius: "var(--radius-md)",
+          backgroundColor: "rgba(15, 23, 42, 0.6)",
+          border: "1px solid var(--border-subtle)",
+          marginBottom: "1.25rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", fontWeight: 600 }}>
+            <span>🎧 Tanlangan mikrofon:</span>
+            <select
+              value={selectedDeviceId}
+              onChange={(e) => {
+                setSelectedDeviceId(e.target.value);
+                if (isTestingMic) {
+                  stopMicTest();
+                }
+              }}
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                color: "var(--text-main)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "6px",
+                padding: "0.35rem 0.6rem",
+                fontSize: "0.82rem",
+                outline: "none",
+                maxWidth: "260px",
+              }}
+            >
+              {audioDevices.length === 0 && <option value="">Tizim birlamchi mikrofoni</option>}
+              {audioDevices.map((d) => (
+                <option key={d.deviceId} value={d.deviceId}>
+                  {d.isVirtual ? `⚠️ ${d.label} (Virtual)` : `🎙️ ${d.label}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              type="button"
+              className={isTestingMic ? "btn-secondary" : "btn-primary"}
+              style={{
+                fontSize: "0.78rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "6px",
+                backgroundColor: isTestingMic ? "var(--accent-rose)" : undefined,
+                color: isTestingMic ? "#fff" : undefined,
+              }}
+              onClick={isTestingMic ? stopMicTest : startMicTest}
+              disabled={isRecording}
+              title="Mikrofoningiz ovozni olayotganini yozishdan oldin tekshiring"
+            >
+              {isTestingMic ? "⏹️ Testni to‘xtatish" : "🔊 Mikrofonni tekshirish (Test)"}
+            </button>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ fontSize: "0.78rem", padding: "0.35rem 0.65rem", borderRadius: "6px" }}
+              onClick={() => loadAudioDevices(true)}
+              title="Qurilmalar ro‘yxatini yangilash"
+            >
+              🔄
+            </button>
+          </div>
+        </div>
+
+        {/* Live VU-Meter during Test */}
+        {isTestingMic && (
+          <div style={{ marginTop: "0.3rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.74rem", marginBottom: "0.25rem" }}>
+              <span style={{ color: testVolume > 5 ? "var(--accent-cyan)" : "var(--accent-rose)", fontWeight: 600 }}>
+                {testVolume > 5 ? "✅ Ovoz signali aniq sezilmoqda" : "⚠️ Ovoz sezilmadi (0%) - gapirib ko‘ring yoki boshqa mikrofon tanlang"}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>{testVolume}%</span>
+            </div>
+            <div
+              style={{
+                width: "100%",
+                height: "8px",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderRadius: "4px",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${testVolume}%`,
+                  height: "100%",
+                  backgroundColor: testVolume > 70 ? "#f43f5e" : testVolume > 20 ? "#38bdf8" : "#22c55e",
+                  transition: "width 0.08s ease-out",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       {uploadError && (
-        <div className="badge badge-rose" style={{ width: "100%", padding: "0.6rem", marginBottom: "1rem", display: "block" }}>
+        <div className="badge badge-rose" style={{ width: "100%", padding: "0.7rem", marginBottom: "1rem", display: "block", textAlign: "left", lineHeight: "1.4" }}>
           ⚠️ {uploadError}
+        </div>
+      )}
+
+      {zeroSignalWarning && (
+        <div
+          style={{
+            backgroundColor: "rgba(244, 63, 94, 0.1)",
+            border: "1px solid rgba(244, 63, 94, 0.4)",
+            borderRadius: "var(--radius-md)",
+            padding: "0.85rem",
+            marginBottom: "1rem",
+            fontSize: "0.8rem",
+            color: "#fecdd3",
+            lineHeight: "1.5",
+          }}
+        >
+          <strong>💡 Mikrofon 0% signal berishini bartaraf qilish bo‘yicha qo‘llanma:</strong>
+          <ul style={{ paddingLeft: "1.2rem", marginTop: "0.35rem", marginBottom: 0 }}>
+            <li>Yuqoridagi <strong>"Tanlangan mikrofon"</strong> ro‘yxatidan <em>Voicemod</em> emas, noutbukning o‘z mikrofoni (Intel Smart Sound yoki Realtek)ni tanlang.</li>
+            <li>Klaviaturangizda mikrofonni o‘chirish tugmasi (masalan <code>F4</code> yoki <code>Fn+F4</code>) yonib turmaganligini tekshiring.</li>
+            <li>Windows Maxfiylik sozlamalarida (<em>Settings → Privacy & Security → Microphone</em>) brauzerga ruxsat yoqilganligiga ishonch hosil qiling.</li>
+          </ul>
         </div>
       )}
 

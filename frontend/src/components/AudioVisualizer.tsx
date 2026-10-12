@@ -47,7 +47,9 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ analyser, isRe
       // Draw centered symmetric frequency bars
       for (let i = 0; i < numBars; i++) {
         const value = dataArray[i * step] || 0;
-        const percent = value / 255;
+        // Non-linear amplification for high responsiveness to speech
+        const normalized = value / 255;
+        const percent = Math.min(1, Math.pow(normalized, 0.55) * 1.6);
         const minHeight = 4;
         const barHeight = Math.max(minHeight, percent * (height * 0.78));
 
