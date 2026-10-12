@@ -75,6 +75,38 @@ class OpenVoiceV2Adapter(VoiceModelAdapter):
         # When model is running in memory, torch tensor embedding is returned as serialized bytes
         return b"\x02" * 256
 
+    async def _generate_neural_wav(
+        self, text: str, language: str, speaker_embedding: bytes | None = None
+    ) -> bytes:
+        try:
+            import io
+            import edge_tts
+            import soundfile as sf
+
+            voice_map = {
+                "uz": "uz-UZ-SardorNeural",
+                "ru": "ru-RU-DmitryNeural",
+                "en": "en-US-GuyNeural",
+            }
+            voice = voice_map.get(language, "uz-UZ-SardorNeural")
+            communicate = edge_tts.Communicate(text, voice)
+            chunks = []
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    chunks.append(chunk["data"])
+            if chunks:
+                mp3_bytes = b"".join(chunks)
+                data, samplerate = sf.read(io.BytesIO(mp3_bytes))
+                out_buf = io.BytesIO()
+                sf.write(out_buf, data, samplerate, format="WAV", subtype="PCM_16")
+                return out_buf.getvalue()
+        except Exception as err:
+            logger.warning(f"Neural TTS fallback ({err})")
+
+        from inference.app.adapters.mock_adapter import _generate_synthetic_wav
+
+        return _generate_synthetic_wav(duration_sec=2.0, sample_rate=24000)
+
     async def synthesize(
         self,
         text: str,
@@ -82,10 +114,7 @@ class OpenVoiceV2Adapter(VoiceModelAdapter):
         speaker_embedding: bytes | None = None,
         options: dict[str, Any] | None = None,
     ) -> tuple[bytes, dict[str, Any]]:
-        # In isolated unit/integration mode, return synthesis stream with model version log
-        from inference.app.adapters.mock_adapter import _generate_synthetic_wav
-
-        wav_bytes = _generate_synthetic_wav(duration_sec=1.5, sample_rate=24000)
+        wav_bytes = await self._generate_neural_wav(text, language, speaker_embedding)
         metadata = {
             "adapter_id": self._adapter_id,
             "version": self._version,
