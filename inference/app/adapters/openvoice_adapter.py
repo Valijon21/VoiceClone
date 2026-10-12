@@ -43,7 +43,7 @@ class OpenVoiceV2Adapter(VoiceModelAdapter):
     @property
     def capabilities(self) -> dict[str, Any]:
         return {
-            "languages": ["en"],  # MeloTTS native base
+            "languages": ["uz", "en", "ru"],
             "supports_voice_cloning": True,
             "sample_rate": 24000,
             "license": "MIT",

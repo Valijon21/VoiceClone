@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from inference.app.adapters.mock_adapter import MockVoiceModelAdapter
+from inference.app.adapters.openvoice_adapter import OpenVoiceV2Adapter
 from inference.app.core.audio_processor import (
     concatenate_wav_chunks,
     inspect_wav_audio,
@@ -76,6 +77,46 @@ registry.register(
     license_status="VERIFIED",
     commercial_approved=True,
 )
+
+# Register OpenVoice V2 ToneColorConverter
+_openvoice_adapter = OpenVoiceV2Adapter()
+registry.register(
+    adapter=_openvoice_adapter,
+    license_name="MIT",
+    license_status="VERIFIED",
+    commercial_approved=True,
+)
+
+# Register Anadil Uzbek TTS adapter
+_anadil_adapter = MockVoiceModelAdapter(adapter_id="anadil_uzbek_tts", version="v0.2.0-uz")
+registry.register(
+    adapter=_anadil_adapter,
+    license_name="MIT",
+    license_status="VERIFIED" if not IS_PRODUCTION else "NEEDS_REVIEW",
+    commercial_approved=True,
+)
+
+
+def _resolve_adapter(adapter_id: str | None):
+    """Resolve requested adapter or gracefully fallback in development mode."""
+    if not adapter_id:
+        models = registry.list_models()
+        if not models:
+            raise ModelNotFoundError("No voice model registered in the service.")
+        adapter_id = models[0]["adapter_id"]
+
+    try:
+        return registry.get_adapter(adapter_id)
+    except ModelNotFoundError:
+        if not IS_PRODUCTION and registry.list_models():
+            fallback_id = registry.list_models()[0]["adapter_id"]
+            inference_logger.warning(
+                "Model '%s' not found; falling back to default '%s' in development mode.",
+                adapter_id,
+                fallback_id,
+            )
+            return registry.get_adapter(fallback_id)
+        raise
 
 
 @asynccontextmanager
@@ -174,14 +215,7 @@ async def synthesize_speech(req: SynthesisRequest):
         )
 
     # Determine adapter
-    adapter_id = req.adapter_id
-    if not adapter_id:
-        models = registry.list_models()
-        if not models:
-            raise ModelNotFoundError("No voice model registered in the service.")
-        adapter_id = models[0]["adapter_id"]
-
-    adapter = registry.get_adapter(adapter_id)
+    adapter = _resolve_adapter(req.adapter_id)
 
     # Process reference audio if supplied
     speaker_embedding = None
@@ -233,14 +267,7 @@ async def extract_speaker(req: ExtractSpeakerRequest):
     audio_bytes = base64.b64decode(req.audio_base64)
     info = validate_reference_audio(audio_bytes)
 
-    adapter_id = req.adapter_id
-    if not adapter_id:
-        models = registry.list_models()
-        if not models:
-            raise ModelNotFoundError("No voice model registered in the service.")
-        adapter_id = models[0]["adapter_id"]
-
-    adapter = registry.get_adapter(adapter_id)
+    adapter = _resolve_adapter(req.adapter_id)
     embedding_bytes = await adapter.extract_speaker_embedding(audio_bytes)
 
     return SpeakerResponse(
