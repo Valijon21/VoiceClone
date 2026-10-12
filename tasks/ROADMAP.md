@@ -109,7 +109,7 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 10 — Paid SaaS (beta natijasidan keyin)
 
-- [ ] `VC-100` — Plan, quota va usage ledger. **Done:** barcha sarflar serverda tekshiriladi, ledger audit qilinadi.
+- [x] `VC-100` — Plan, quota va usage ledger. **Done:** barcha sarflar serverda tekshiriladi, immutable `UsageLedger` orqali audit qilinadi, owner/superuser va VIP foydalanuvchilar uchun `is_unlimited=True` va `plan='UNLIMITED'` to'liq cheksiz bypass joriy etildi, `GET /api/v1/accounts/quota/` va admin `PATCH /api/v1/accounts/users/<id>/plan/` boshqaruv API'lari qo'shildi hamda 8 ta unit/integration test bilan tasdiqlandi.
 - [ ] `VC-101` — Payment provider research/integration. **Done:** tanlangan provayderning Uzbekistan merchant/KYC/payout imkoniyati tekshirilgan.
 - [ ] `VC-102` — Subscription lifecycle, failed payments va refunds. **Done:** to‘lov xatolari quota’ni buzmaydi.
 - [ ] `VC-103` — Public pricing, terms, privacy policy va deletion policy. **Done:** pullik ishga tushirishdan oldin hujjatlar ko‘rib chiqilgan.

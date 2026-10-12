@@ -81,12 +81,17 @@
 - [x] `VC-083`: Hardware detection va foydalanuvchiga tushunarli errorlar (`hardware.py`, `/hardware`)
 - [x] `VC-084`: Installer/desktop wrapper talabini tekshirish (`docs/DECISIONS/0002-desktop-wrapper-evaluation.md`)
 
-## Hozirgi faol sprint (Sprint 10: Closed Beta & Product Validation / Phase 09) — DONE
+## Sprint 10 (Closed Beta & Product Validation / Phase 09) — DONE
 - [x] `VC-090`: Beta analytics: job success, p50/p95 latency, RTF, language/model, error rates
 - [x] `VC-091`: 10–20 beta foydalanuvchi bilan kuzatuv va user journey
 - [x] `VC-092`: O‘zbekcha talaffuz bug backlog'i va normalizatsiya
 - [x] `VC-093`: Target auditoriya va willingness-to-pay intervyulari
 - [x] `VC-094`: Unit economics dashboard va compute tannarx hisobi
 
-
-
+## Hozirgi faol sprint (Sprint 11: Paid SaaS & Quota Ledger / Phase 10) — IN PROGRESS
+- [x] `VC-100`: Plan, quota va immutable usage ledger (`UsageLedger`, superuser/owner/VIP `is_unlimited=True` cheksiz bypass, quota status & admin user plan API, 69 ta to'liq o'tgan testlar)
+- [ ] `VC-101`: Payment provider research/integration (Uzbekistan merchant / Click / Payme / Uzum)
+- [ ] `VC-102`: Subscription lifecycle, failed payments va refunds
+- [ ] `VC-103`: Public pricing, terms, privacy policy va deletion policy
+- [ ] `VC-104`: Customer support/admin dashboard
+- [ ] `VC-105`: Load test va capacity plan

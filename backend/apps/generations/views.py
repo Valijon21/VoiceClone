@@ -25,15 +25,26 @@ class GenerationJobListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         job = serializer.save()
 
-        # Dispatch Celery background task (VC-051)
+        # Dispatch Celery background task (VC-051) with local dev fallback
         if job.status == GenerationJob.STATUS_PENDING:
+            dispatched = False
             try:
                 from .tasks import process_speech_synthesis_job
 
                 process_speech_synthesis_job.delay(str(job.id))
+                dispatched = True
             except Exception:
-                # In testing/dev without running Redis broker, task dispatch failure does not crash HTTP request
                 pass
+
+            if not dispatched:
+                # Local dev fallback: if Celery/Redis broker is unavailable, run in-process
+                try:
+                    from .tasks import process_speech_synthesis_job
+
+                    process_speech_synthesis_job(str(job.id))
+                    job.refresh_from_db()
+                except Exception:
+                    pass
 
         output_serializer = GenerationJobSerializer(job)
         headers = {

@@ -88,6 +88,20 @@ class CreateGenerationJobSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         user = self.context["request"].user
         voice_profile = attrs.get("voice_profile")
+        input_text = attrs.get("input_text", "")
+
+        # Quota Gate Enforcement (VC-100):
+        # Estimate duration based on text length (~15 characters per second of speech)
+        estimated_seconds = max(2.0, len(input_text.strip()) / 15.0)
+        if not user.has_available_quota(estimated_seconds):
+            raise serializers.ValidationError(
+                {
+                    "quota": (
+                        f"Quota limit reached. Available remaining: {user.remaining_seconds:.1f}s. "
+                        f"Estimated required: {estimated_seconds:.1f}s. Upgrade plan or contact owner."
+                    )
+                }
+            )
 
         # Consent Gate Enforcement:
         if voice_profile:

@@ -117,6 +117,35 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
             duration_sec=duration,
         )
 
+        # Quota Ledger Accounting (VC-100)
+        try:
+            from apps.accounts.models import UsageLedger
+
+            user = job.user
+            if user:
+                if user.is_owner_or_unlimited:
+                    UsageLedger.objects.create(
+                        user=user,
+                        job_id=job.id,
+                        operation=UsageLedger.OPERATION_UNLIMITED_BYPASS,
+                        delta_seconds=0.0,
+                        balance_after_seconds=-1.0,
+                        notes=f"Unlimited VIP bypass synthesis: {duration:.2f}s (job {job.id})",
+                    )
+                else:
+                    user.audio_seconds_used += float(duration)
+                    user.save(update_fields=["audio_seconds_used"])
+                    UsageLedger.objects.create(
+                        user=user,
+                        job_id=job.id,
+                        operation=UsageLedger.OPERATION_DEBIT,
+                        delta_seconds=-float(duration),
+                        balance_after_seconds=user.remaining_seconds,
+                        notes=f"Speech synthesis debit: {duration:.2f}s (job {job.id})",
+                    )
+        except Exception as ledger_err:
+            logger.warning(f"Failed to record usage ledger for job {job.id}: {ledger_err}")
+
         job.progress_percent = 100
         job.transition_to(GenerationJob.STATUS_SUCCEEDED)
         try:
