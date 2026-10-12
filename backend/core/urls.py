@@ -69,6 +69,10 @@ def api_schema_view(_request):
     )
 
 
+from django.conf import settings
+from django.views.static import serve
+from django.urls import include, path, re_path
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/schema/", api_schema_view, name="api-schema"),
@@ -78,4 +82,6 @@ urlpatterns = [
     path("api/v1/audio/", include("apps.audio.urls", namespace="audio")),
     path("api/v1/generations/", include("apps.generations.urls", namespace="generations")),
     path("api/v1/audit/", include("apps.audit.urls", namespace="audit")),
+    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
 ]
+
