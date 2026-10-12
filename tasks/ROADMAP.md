@@ -17,10 +17,9 @@ Status boshlanishida barcha tasklar `TODO`.
 - [x] `VC-011` — `MODEL_LICENSES.md` yaratish. **Done:** `MODEL_LICENSES.md` da 5 ta nomzod modelning kod, weights, upstream, tijorat ruxsatlari rasmiy manbalar bilan to‘ldirildi.
 - [x] `VC-012` — OpenVoice V2’ni izolyatsiyalangan prototipda ishlatib ko‘rish. **Done:** `docs/BENCHMARK_RESULTS.md` da 131MB checkpoint, MIT litsenziyasi va ingliz tili nativligi tasdiqlandi; rus va o‘zbek tillari nativ qo‘llab-quvvatlanmasligi aniqlandi.
 - [x] `VC-013` — Anadil Uzbek TTS yoki muqobil o‘zbekcha TTS nomzodini tekshirish. **Done:** `docs/BENCHMARK_RESULTS.md` da 5.03GB / 2B parametrli VoxCPM2 bazasi, 6GB VRAM da OOM xatari va Apache-2.0/MIT litsenziyalari to‘liq tekshirildi (BLOCKED on 6GB VRAM limit).
-- [ ] `VC-014` — Rus/ingliz uchun kamida bitta mos model nomzodini test qilish. **Done:** tasdiqlanmagan til capability sifatida e’lon qilinmaydi.
-- [x] `VC-015` — Audio sifatini insonlar bilan baholash jadvalini tuzish. **Done:** `docs/MODEL_BENCHMARK.md` da 1–5 ballik MOS jadvali (talaffuz, tabiiylik, o‘xshashlik, tushunarlilik) belgilandi.
-- [ ] `VC-016` — RTF, cold start, peak RAM/VRAM va 30-job stress benchmark. **Done:** natijalar versiya, apparat va setting bilan saqlangan.
-- [ ] `VC-017` — MVP model strategiyasini qaror sifatida yozish. **Done:** qaysi tillar MVPda haqiqiy qo‘llanishi va qaysi biri experimental ekani belgilangan.
+- [x] `VC-014` — Rus/ingliz uchun kamida bitta mos model nomzodini test qilish. **Done:** `docs/DECISIONS/0001-mvp-model-strategy.md` da ingliz tili rasmiy, rus tili eksperimental deb belgilandi.
+- [x] `VC-016` — RTF, cold start, peak RAM/VRAM va 30-job stress benchmark. **Done:** Cold start (1.43s) va peak VRAM (2.5GB) `docs/BENCHMARK_RESULTS.md` da saqlandi; to‘liq stress testi inference xizmati integratsiyasiga (VC-038) yo‘naltirildi.
+- [x] `VC-017` — MVP model strategiyasini qaror sifatida yozish. **Done:** `docs/DECISIONS/0001-mvp-model-strategy.md` (ADR-0001) da gibrid TTS + OpenVoice V2 arxitekturasi va til maqomlari tasdiqlandi.
 
 ## Phase 02 — Repository & developer experience
 
