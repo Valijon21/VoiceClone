@@ -111,7 +111,7 @@ Status boshlanishida barcha tasklar `TODO`.
 
 - [x] `VC-100` — Plan, quota va usage ledger. **Done:** barcha sarflar serverda tekshiriladi, immutable `UsageLedger` orqali audit qilinadi, owner/superuser va VIP foydalanuvchilar uchun `is_unlimited=True` va `plan='UNLIMITED'` to'liq cheksiz bypass joriy etildi, `GET /api/v1/accounts/quota/` va admin `PATCH /api/v1/accounts/users/<id>/plan/` boshqaruv API'lari qo'shildi hamda 8 ta unit/integration test bilan tasdiqlandi.
 - [ ] `VC-101` — Payment provider research/integration. **Done:** tanlangan provayderning Uzbekistan merchant/KYC/payout imkoniyati tekshirilgan.
-- [ ] `VC-102` — Subscription lifecycle, failed payments va refunds. **Done:** to‘lov xatolari quota’ni buzmaydi.
+- [x] `VC-102` — Subscription lifecycle, failed payments va refunds. **Done:** `Subscription` va `PaymentTransaction` modellari, 3 kunlik grace period bilan xavfsiz holatlar mashinasi, to‘lov xatosi paytida kvota daxlsizligi kafolati ("to‘lov xatolari quota’ni buzmaydi"), `SubscriptionLifecycleService` orqali to‘liq va qisman refund oqimi, `UsageLedger` orqali audit qilinadigan reversallar, 6 ta DRF API endpointi, `docs/SUBSCRIPTION_LIFECYCLE.md` hujjati va 15 ta unit/integration test bilan to‘liq joriy etildi.
 - [ ] `VC-103` — Public pricing, terms, privacy policy va deletion policy. **Done:** pullik ishga tushirishdan oldin hujjatlar ko‘rib chiqilgan.
 - [ ] `VC-104` — Customer support/admin dashboard. **Done:** quota, job status va consent/report holatlarini vakolatli xodim ko‘ra oladi.
 - [ ] `VC-105` — Load test va capacity plan. **Done:** test natijasiga ko‘ra bir worker/GPU ko‘tara oladigan concurrency belgilanadi.

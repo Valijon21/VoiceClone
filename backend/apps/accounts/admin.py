@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import UsageLedger, User
+from .models import PaymentTransaction, Subscription, UsageLedger, User
 
 
 @admin.register(User)
@@ -67,4 +67,45 @@ class UsageLedgerAdmin(admin.ModelAdmin):
         "notes",
         "created_at",
     )
+    ordering = ("-created_at",)
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    """Admin inspection and management of subscription lifecycles."""
+
+    list_display = (
+        "id",
+        "user",
+        "plan",
+        "status",
+        "billing_cycle",
+        "price_amount",
+        "current_period_end",
+        "cancel_at_period_end",
+        "failed_payment_count",
+    )
+    list_filter = ("status", "plan", "billing_cycle", "cancel_at_period_end")
+    search_fields = ("user__username", "user__email")
+    readonly_fields = ("id", "created_at", "updated_at")
+    ordering = ("-created_at",)
+
+
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    """Audit and administrative ledger of payment transactions and refunds."""
+
+    list_display = (
+        "id",
+        "user",
+        "provider",
+        "amount",
+        "currency",
+        "status",
+        "provider_transaction_id",
+        "created_at",
+    )
+    list_filter = ("status", "provider", "currency")
+    search_fields = ("user__username", "user__email", "provider_transaction_id", "idempotency_key")
+    readonly_fields = ("id", "created_at", "updated_at")
     ordering = ("-created_at",)

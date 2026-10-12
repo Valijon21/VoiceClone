@@ -165,3 +165,210 @@ class AdminUserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = UserSerializer
     queryset = User.objects.all().order_by("-created_at")
+
+
+class SubscriptionDetailView(generics.GenericAPIView):
+    """
+    Retrieve current subscription status or activate/upgrade a subscription (VC-102).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from rest_framework.response import Response
+
+        from .models import Subscription
+        from .serializers import SubscriptionSerializer
+
+        user = request.user
+        sub = (
+            Subscription.objects.filter(user=user)
+            .exclude(status__in=[Subscription.STATUS_EXPIRED, Subscription.STATUS_CANCELED])
+            .first()
+        )
+        if sub:
+            return Response(SubscriptionSerializer(sub).data)
+
+        # Default free trial representation
+        return Response(
+            {
+                "id": None,
+                "plan": user.plan,
+                "status": "FREE_TRIAL",
+                "billing_cycle": "MONTHLY",
+                "price_amount": "0.00",
+                "currency": "UZS",
+                "current_period_start": user.created_at,
+                "current_period_end": None,
+                "cancel_at_period_end": False,
+                "grace_period_until": None,
+                "failed_payment_count": 0,
+                "is_active_or_in_grace": True,
+                "transactions": [],
+            }
+        )
+
+    def post(self, request):
+        from rest_framework.response import Response
+
+        from .serializers import SubscriptionCreateSerializer, SubscriptionSerializer
+        from .services import SubscriptionLifecycleService
+
+        serializer = SubscriptionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        sub, tx = SubscriptionLifecycleService.activate_subscription(
+            user=request.user,
+            plan=data["plan"],
+            billing_cycle=data.get("billing_cycle", "MONTHLY"),
+            provider=data.get("provider", "MOCK"),
+            provider_transaction_id=data.get("provider_transaction_id"),
+            idempotency_key=data.get("idempotency_key"),
+        )
+        return Response(
+            {
+                "status": "success",
+                "message": f"Successfully subscribed to {sub.plan} tier.",
+                "subscription": SubscriptionSerializer(sub).data,
+                "transaction_id": str(tx.id),
+            },
+            status=201,
+        )
+
+
+class SubscriptionCancelView(generics.GenericAPIView):
+    """
+    Cancel an active subscription at period end or immediately (VC-102).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from rest_framework.response import Response
+
+        from .models import Subscription
+        from .serializers import SubscriptionCancelSerializer, SubscriptionSerializer
+        from .services import SubscriptionLifecycleService
+
+        serializer = SubscriptionCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        sub = (
+            Subscription.objects.filter(user=request.user)
+            .exclude(status__in=[Subscription.STATUS_EXPIRED, Subscription.STATUS_CANCELED])
+            .first()
+        )
+        if not sub:
+            return Response({"detail": "No active subscription found to cancel."}, status=404)
+
+        sub = SubscriptionLifecycleService.cancel_subscription(
+            subscription=sub,
+            immediate=data.get("immediate", False),
+            reason=data.get("reason", "User requested cancel"),
+        )
+        return Response(
+            {
+                "status": "success",
+                "message": "Subscription canceled successfully.",
+                "subscription": SubscriptionSerializer(sub).data,
+            }
+        )
+
+
+class PaymentTransactionListView(generics.ListAPIView):
+    """
+    List user's payment and refund transaction history (VC-102).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import PaymentTransactionSerializer
+
+        return PaymentTransactionSerializer
+
+    def get_queryset(self):
+        from .models import PaymentTransaction
+
+        return PaymentTransaction.objects.filter(user=self.request.user).order_by("-created_at")
+
+
+class AdminRefundProcessView(generics.GenericAPIView):
+    """
+    Admin-only endpoint to issue refunds and safely rollback quota (VC-102).
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        from django.shortcuts import get_object_or_404
+        from rest_framework.response import Response
+
+        from .models import PaymentTransaction
+        from .serializers import PaymentTransactionSerializer, RefundRequestSerializer
+        from .services import SubscriptionLifecycleService
+
+        serializer = RefundRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        tx = get_object_or_404(PaymentTransaction, id=data["transaction_id"])
+        try:
+            tx = SubscriptionLifecycleService.process_refund(
+                transaction_obj=tx,
+                refund_amount=data.get("refund_amount"),
+                reason=data.get("reason", "Admin issued refund"),
+            )
+        except ValueError as err:
+            return Response({"detail": str(err)}, status=400)
+
+        return Response(
+            {
+                "status": "success",
+                "message": "Refund processed successfully.",
+                "transaction": PaymentTransactionSerializer(tx).data,
+            }
+        )
+
+
+class SimulatePaymentFailureView(generics.GenericAPIView):
+    """
+    Simulate recurring payment failure / card decline to verify quota invariants (VC-102).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from rest_framework.response import Response
+
+        from .models import Subscription
+        from .serializers import PaymentTransactionSerializer
+        from .services import SubscriptionLifecycleService
+
+        sub = (
+            Subscription.objects.filter(user=request.user)
+            .exclude(status__in=[Subscription.STATUS_EXPIRED, Subscription.STATUS_CANCELED])
+            .first()
+        )
+        if not sub:
+            return Response({"detail": "No active subscription found for test."}, status=404)
+
+        reason = request.data.get("reason", "Card charge declined by issuing bank")
+        code = request.data.get("code", "INSUFFICIENT_FUNDS")
+
+        fail_tx = SubscriptionLifecycleService.handle_payment_failure(
+            subscription=sub,
+            failure_reason=reason,
+            failure_code=code,
+        )
+        return Response(
+            {
+                "status": "failure_simulated",
+                "detail": "Payment failure handled. Quota remains uncorrupted.",
+                "subscription_status": sub.status,
+                "grace_period_until": sub.grace_period_until,
+                "transaction": PaymentTransactionSerializer(fail_tx).data,
+            }
+        )

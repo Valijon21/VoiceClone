@@ -23,6 +23,17 @@ def api_schema_view(_request):
             "paths": {
                 "/api/v1/accounts/register/": {"post": {"summary": "Register a new user"}},
                 "/api/v1/accounts/me/": {"get": {"summary": "Retrieve authenticated user profile"}},
+                "/api/v1/accounts/quota/": {"get": {"summary": "Retrieve user plan and quota status"}},
+                "/api/v1/accounts/subscription/": {
+                    "get": {"summary": "Retrieve current subscription and lifecycle status (VC-102)"},
+                    "post": {"summary": "Subscribe or upgrade plan tier (VC-102)"},
+                },
+                "/api/v1/accounts/subscription/cancel/": {
+                    "post": {"summary": "Cancel active subscription at period end or immediately (VC-102)"}
+                },
+                "/api/v1/accounts/subscription/transactions/": {
+                    "get": {"summary": "Retrieve payment and refund transaction history (VC-102)"}
+                },
                 "/api/v1/voices/": {
                     "get": {"summary": "List voice profiles"},
                     "post": {"summary": "Create voice profile"},

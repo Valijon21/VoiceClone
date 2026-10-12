@@ -60,6 +60,89 @@ class UsageLedgerSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    """Serializer for payment transactions and refunds (VC-102)."""
+
+    class Meta:
+        from .models import PaymentTransaction
+
+        model = PaymentTransaction
+        fields = [
+            "id",
+            "provider",
+            "provider_transaction_id",
+            "amount",
+            "currency",
+            "status",
+            "failure_code",
+            "failure_reason",
+            "refund_amount",
+            "refund_reason",
+            "idempotency_key",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Detailed serializer for user subscription status and lifecycle (VC-102)."""
+
+    is_active_or_in_grace = serializers.BooleanField(read_only=True)
+    transactions = PaymentTransactionSerializer(many=True, read_only=True)
+
+    class Meta:
+        from .models import Subscription
+
+        model = Subscription
+        fields = [
+            "id",
+            "plan",
+            "status",
+            "billing_cycle",
+            "price_amount",
+            "currency",
+            "current_period_start",
+            "current_period_end",
+            "cancel_at_period_end",
+            "grace_period_until",
+            "failed_payment_count",
+            "is_active_or_in_grace",
+            "transactions",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class SubscriptionCreateSerializer(serializers.Serializer):
+    """Serializer for subscribing to a plan or upgrading (VC-102)."""
+
+    plan = serializers.ChoiceField(choices=[User.PLAN_CREATOR, User.PLAN_PRO, User.PLAN_UNLIMITED])
+    billing_cycle = serializers.ChoiceField(choices=["MONTHLY", "YEARLY"], default="MONTHLY")
+    provider = serializers.ChoiceField(
+        choices=["MOCK", "CLICK", "PAYME", "UZUM", "STRIPE", "MANUAL"], default="MOCK"
+    )
+    provider_transaction_id = serializers.CharField(
+        max_length=128, required=False, allow_blank=True
+    )
+    idempotency_key = serializers.CharField(max_length=128, required=False, allow_blank=True)
+
+
+class SubscriptionCancelSerializer(serializers.Serializer):
+    """Serializer for canceling a subscription (VC-102)."""
+
+    immediate = serializers.BooleanField(default=False)
+    reason = serializers.CharField(max_length=255, default="User requested cancellation")
+
+
+class RefundRequestSerializer(serializers.Serializer):
+    """Admin serializer for processing transaction refunds (VC-102)."""
+
+    transaction_id = serializers.UUIDField()
+    refund_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    reason = serializers.CharField(max_length=255, default="Customer requested refund")
+
+
 class AdminPlanUpdateSerializer(serializers.Serializer):
     """Owner/Admin serializer to grant unlimited access, upgrade plans, or adjust quota."""
 
