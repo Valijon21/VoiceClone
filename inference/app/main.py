@@ -92,6 +92,14 @@ async def health_check():
     )
 
 
+@app.get("/hardware")
+async def get_hardware_info():
+    """Detailed hardware capability inspection and diagnostics (VC-083)."""
+    from .core.hardware import detect_hardware_capabilities
+
+    return detect_hardware_capabilities()
+
+
 @app.post("/synthesize", response_model=SynthesisResponse)
 async def synthesize_speech(req: SynthesisRequest):
     """Synthesize normalized text into WAV audio using bounded concurrency."""

@@ -74,12 +74,19 @@
 - [x] `VC-078`: API permission tests, frontend E2E, smoke/performance testlar (45 ta test 100% o‘tdi)
 - [x] `VC-079`: Restore drill va incident runbook (`docs/INCIDENT_RUNBOOK.md`)
 
-## Hozirgi faol sprint (Sprint 09: Local/Offline Packaging / Phase 08)
-- [ ] `VC-080`: `local` deployment profili va yagona ishga tushirish skripti
-- [ ] `VC-081`: Model cache/download manager va hash verification
-- [ ] `VC-082`: Internet uzilgan holda offline acceptance test
-- [ ] `VC-083`: Hardware detection va foydalanuvchiga tushunarli errorlar
-- [ ] `VC-084`: Installer/desktop wrapper talabini tekshirish (ADR qarori)
+## Sprint 09 (Local/Offline Packaging / Phase 08) — DONE
+- [x] `VC-080`: `local` deployment profili va yagona ishga tushirish skripti (`scripts/start_local.ps1`, `scripts/start_local.sh`)
+- [x] `VC-081`: Model cache/download manager va hash verification (`model_manager.py`)
+- [x] `VC-082`: Internet uzilgan holda offline acceptance test (`tests/test_offline_acceptance.py`)
+- [x] `VC-083`: Hardware detection va foydalanuvchiga tushunarli errorlar (`hardware.py`, `/hardware`)
+- [x] `VC-084`: Installer/desktop wrapper talabini tekshirish (`docs/DECISIONS/0002-desktop-wrapper-evaluation.md`)
+
+## Hozirgi faol sprint (Sprint 10: Closed Beta & Product Validation / Phase 09)
+- [ ] `VC-090`: Beta analytics: job success, p50/p95 latency, RTF, language/model, error rates
+- [ ] `VC-091`: 10–20 beta foydalanuvchi bilan kuzatuv va user journey
+- [ ] `VC-092`: O‘zbekcha talaffuz bug backlog'i va normalizatsiya
+- [ ] `VC-093`: Target auditoriya va willingness-to-pay intervyulari
+- [ ] `VC-094`: Unit economics dashboard va compute tannarx hisobi
 
 
 

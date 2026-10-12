@@ -93,11 +93,11 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 08 — Local/offline packaging
 
-- [ ] `VC-080` — `local` deployment profili. **Done:** developer bir buyruq bilan kerakli servislarni ishga tushira oladi.
-- [ ] `VC-081` — Model cache/download manager va hash verification. **Done:** weights versiyasi va checksum tekshiriladi.
-- [ ] `VC-082` — Internet uzilgan holda offline acceptance test. **Done:** offline deb va’da qilingan scenario tashqi API’siz ishlaydi.
-- [ ] `VC-083` — Hardware detection va foydalanuvchiga tushunarli errorlar. **Done:** VRAM yetishmasligi va CPU fallback noaniq crash emas, tushunarli xabar beradi.
-- [ ] `VC-084` — Installer/desktop wrapper talabini tekshirish. **Done:** desktop app talab qilinadimi, alohida qaror yozilgan; kerak bo‘lsa alohida scope ochiladi.
+- [x] `VC-080` — `local` deployment profili. **Done:** `scripts/start_local.ps1` (PowerShell) va `scripts/start_local.sh` (Bash) yordamida developer bitta buyruq bilan barcha servislarni ishga tushiradi.
+- [x] `VC-081` — Model cache/download manager va hash verification. **Done:** `inference/app/core/model_manager.py` da SHA-256 xesh tekshiruvi, buzilgan vaznlarni aniqlash va lokal xotira boshqaruvi qurildi.
+- [x] `VC-082` — Internet uzilgan holda offline acceptance test. **Done:** `tests/test_offline_acceptance.py` orqali tashqi internet/tarmoq uzilgan holda matn normalizatsiyasi va nutq sintezi to‘liq ishlashi isbotlandi.
+- [x] `VC-083` — Hardware detection va foydalanuvchiga tushunarli errorlar. **Done:** `inference/app/core/hardware.py` va `/hardware` endpointi orqali GPU VRAM tekshiruvi va CPU fallback diagnostikasi o‘rnatildi.
+- [x] `VC-084` — Installer/desktop wrapper talabini tekshirish. **Done:** `docs/DECISIONS/0002-desktop-wrapper-evaluation.md` ADR-0002 hujjati qabul qilinib, MVP uchun veb-ilova va lokal skriptlar ma'qullandi.
 
 ## Phase 09 — Closed beta & product validation
 
