@@ -89,3 +89,81 @@ class ApprovedModelsView(APIView):
         return Response(
             {"approved_models": [m for m in models_data if m["model_id"] in APPROVED_MODELS]}
         )
+
+
+class RateGenerationJobView(APIView):
+    """
+    Beta user quality rating and feedback endpoint (VC-091).
+    Allows authenticated job owners to provide a 1-5 quality score
+    for successful generations.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, id):
+        try:
+            job = GenerationJob.objects.select_related("result_audio").get(
+                id=id, user=request.user
+            )
+        except GenerationJob.DoesNotExist:
+            return Response(
+                {"error_code": "NOT_FOUND", "message": "Job not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if job.status != GenerationJob.STATUS_SUCCEEDED or not hasattr(job, "result_audio"):
+            return Response(
+                {
+                    "error_code": "INVALID_STATE",
+                    "message": "Only successfully generated audio can be rated.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rating = request.data.get("quality_rating")
+        try:
+            rating_int = int(rating)
+            if not 1 <= rating_int <= 5:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response(
+                {
+                    "error_code": "INVALID_RATING",
+                    "message": "quality_rating must be an integer between 1 and 5.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result_audio = job.result_audio
+        result_audio.quality_rating = rating_int
+        result_audio.save(update_fields=["quality_rating"])
+
+        feedback_notes = request.data.get("feedback_notes", "")
+        try:
+            from apps.audit.models import AuditEvent
+
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="AUDIO_QUALITY_RATED",
+                target_model="GeneratedAudio",
+                target_id=str(result_audio.id),
+                metadata={
+                    "job_id": str(job.id),
+                    "rating": rating_int,
+                    "model_id": job.model_id,
+                    "language": job.language,
+                    "feedback_notes": str(feedback_notes)[:500],
+                },
+            )
+        except Exception:
+            pass
+
+        return Response(
+            {
+                "status": "RATED",
+                "job_id": str(job.id),
+                "quality_rating": rating_int,
+                "feedback_notes": feedback_notes,
+            },
+            status=status.HTTP_200_OK,
+        )

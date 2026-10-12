@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from .analytics import get_beta_analytics_summary
 from .models import AbuseReport, AuditEvent
 from .serializers import AbuseReportSerializer, AuditEventSerializer, CreateAbuseReportSerializer
 
@@ -74,3 +76,22 @@ class AuditEventListView(generics.ListAPIView):
     queryset = AuditEvent.objects.all()
     serializer_class = AuditEventSerializer
     permission_classes = [permissions.IsAdminUser]
+
+
+class BetaAnalyticsView(APIView):
+    """
+    Beta operational telemetry and performance dashboard (VC-090).
+    Aggregates job success rates, latency distributions (p50/p95),
+    RTF (Real-Time Factor), model/language breakdown, and error categories.
+    Restricted to Admin/Staff users.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        period = request.query_params.get("period", "all")
+        if period not in ("24h", "7d", "30d", "all"):
+            period = "all"
+        data = get_beta_analytics_summary(period=period)
+        return Response(data, status=status.HTTP_200_OK)
+

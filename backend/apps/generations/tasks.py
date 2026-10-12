@@ -41,6 +41,12 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
     if job.voice_profile and not job.voice_profile.has_verified_consent:
         error_msg = "Consent was revoked or is unverified. Synthesis aborted."
         job.transition_to(GenerationJob.STATUS_FAILED, error=error_msg)
+        try:
+            from apps.audit.analytics import record_job_metric
+
+            record_job_metric(job, error_message=error_msg)
+        except Exception as metric_err:
+            logger.warning(f"Failed to record metric for job {job.id}: {metric_err}")
         return {"status": "FAILED", "reason": error_msg}
 
     # Prepare payload for FastAPI inference service
@@ -78,6 +84,12 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
                 job.transition_to(
                     GenerationJob.STATUS_FAILED, error=f"[{error_code}] {err_message}"
                 )
+                try:
+                    from apps.audit.analytics import record_job_metric
+
+                    record_job_metric(job, error_message=f"[{error_code}] {err_message}")
+                except Exception as metric_err:
+                    logger.warning(f"Failed to record metric for job {job.id}: {metric_err}")
                 return {"status": "FAILED", "error_code": error_code}
 
             # Retryable server errors (503 GPU busy)
@@ -107,14 +119,25 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
 
         job.progress_percent = 100
         job.transition_to(GenerationJob.STATUS_SUCCEEDED)
+        try:
+            from apps.audit.analytics import record_job_metric
+
+            record_job_metric(job, audio_duration_sec=duration)
+        except Exception as metric_err:
+            logger.warning(f"Failed to record metric for job {job.id}: {metric_err}")
+
         return {"status": "SUCCEEDED", "asset_id": str(asset.id)}
 
     except Exception as exc:
         if self.request.retries >= self.max_retries:
-            job.transition_to(
-                GenerationJob.STATUS_FAILED,
-                error=f"Maximum retries exceeded. Error: {str(exc)}",
-            )
+            err_msg = f"Maximum retries exceeded. Error: {str(exc)}"
+            job.transition_to(GenerationJob.STATUS_FAILED, error=err_msg)
+            try:
+                from apps.audit.analytics import record_job_metric
+
+                record_job_metric(job, error_message=err_msg)
+            except Exception as metric_err:
+                logger.warning(f"Failed to record metric for job {job.id}: {metric_err}")
             return {"status": "FAILED", "reason": "MAX_RETRIES_EXCEEDED"}
         raise
 

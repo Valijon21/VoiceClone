@@ -38,6 +38,21 @@ def api_schema_view(_request):
                     "get": {"summary": "List synthesis jobs"},
                     "post": {"summary": "Dispatch speech synthesis job"},
                 },
+                "/api/v1/generations/jobs/{id}/rate/": {
+                    "post": {"summary": "Submit beta quality rating (1-5) and feedback"}
+                },
+                "/api/v1/audit/analytics/beta/": {
+                    "get": {
+                        "summary": "Retrieve operational beta analytics (p50/p95 latency, RTF, error rates)"
+                    }
+                },
+                "/api/v1/audit/reports/": {
+                    "get": {"summary": "List abuse reports"},
+                    "post": {"summary": "Submit abuse report"},
+                },
+                "/api/v1/audit/events/": {
+                    "get": {"summary": "List security and compliance audit events"}
+                },
             },
         }
     )

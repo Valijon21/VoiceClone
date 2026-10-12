@@ -82,3 +82,35 @@ class AbuseReport(models.Model):
 
     def __str__(self) -> str:
         return f"Report {self.id} [{self.status}] by {self.reporter}"
+
+
+class OperationalMetric(models.Model):
+    """
+    Privacy-preserving telemetry record for speech synthesis jobs (VC-090).
+    Captures operational performance, latency, RTF, and failure categories
+    WITHOUT storing any private speech content or text prompts.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_id = models.UUIDField(db_index=True)
+    user_id = models.UUIDField(null=True, blank=True, db_index=True)
+    model_id = models.CharField(max_length=80, db_index=True)
+    language = models.CharField(max_length=10, db_index=True)
+    status = models.CharField(max_length=20, db_index=True)  # SUCCEEDED, FAILED, CANCELLED
+
+    char_count = models.PositiveIntegerField(default=0)
+    audio_duration_sec = models.FloatField(default=0.0)
+    queue_latency_ms = models.FloatField(default=0.0)
+    compute_latency_ms = models.FloatField(default=0.0)
+    total_latency_ms = models.FloatField(default=0.0)
+    rtf = models.FloatField(null=True, blank=True)  # Real-Time Factor: compute_sec / audio_sec
+
+    error_category = models.CharField(max_length=64, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "audit_operational_metric"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Metric [{self.status}] job={self.job_id} rtf={self.rtf}"
