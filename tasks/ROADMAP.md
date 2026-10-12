@@ -32,8 +32,8 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 03 — AI inference service
 
-- [ ] `VC-030` — `VoiceModelAdapter` interface’ini belgilash: capabilities, validate_reference, synthesize, health. **Done:** model implementatsiyasi web API’dan ajratilgan.
-- [ ] `VC-031` — Model registry/config: model version, languages, device, license review status. **Done:** tasdiqlanmagan model production mode’da yuklanmaydi.
+- [x] `VC-030` — `VoiceModelAdapter` interface’ini belgilash: capabilities, validate_reference, synthesize, health. **Done:** `inference/app/core/adapter_base.py` va `mock_adapter.py` da to‘liq belgilandi va contract testlaridan o‘tdi.
+- [x] `VC-031` — Model registry/config: model version, languages, device, license review status. **Done:** `inference/app/core/registry.py` da ModelRegistry va qat'iy ishlab chiqarish License Gate amalga oshirildi.
 - [ ] `VC-032` — FastAPI inference service’ni yaratish. **Done:** internal endpoint va health endpoint ishlaydi; tashqi internetga ochilmagan.
 - [ ] `VC-033` — Upload audio normalization/validation. **Done:** noto‘g‘ri format, juda katta yoki bo‘sh audio boshqariladigan xato beradi.
 - [ ] `VC-034` — Text normalization modulini yaratish. **Done:** uzbek apostroflari, raqamlar, tinish belgilari uchun testlar mavjud.

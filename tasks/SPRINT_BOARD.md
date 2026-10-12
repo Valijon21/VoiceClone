@@ -19,8 +19,8 @@
 - [x] `VC-025`: README: Windows dev va Linux deploy bo‘yicha to‘liq qo‘llanma
 
 ## Hozirgi faol sprint (Sprint 04: AI Inference Service / Phase 03)
-- [ ] `VC-030`: `VoiceModelAdapter` interface'ini belgilash (`capabilities`, `validate_reference`, `synthesize`, `health`)
-- [ ] `VC-031`: Model registry va config: model version, languages, license gate
+- [x] `VC-030`: `VoiceModelAdapter` interface'ini belgilash (`inference/app/core/adapter_base.py`, `mock_adapter.py`)
+- [x] `VC-031`: Model registry va License Gate (`inference/app/core/registry.py`)
 - [ ] `VC-032`: FastAPI inference service loyihasini yaratish (`GET /health`, `POST /synthesize`)
 - [ ] `VC-033`: Audio upload validation & normalization
 - [ ] `VC-034`: Matn normalizatsiyasi (o‘zbek apostroflari, raqamlar)
