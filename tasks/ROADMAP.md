@@ -45,15 +45,15 @@ Status boshlanishida barcha tasklar `TODO`.
 
 ## Phase 04 — Django domain/API
 
-- [ ] `VC-040` — Django 5.2 LTS + DRF project va apps (`accounts`, `voices`, `audio`, `generations`, `usage`, `audit`). **Done:** app chegaralari va dependency yo‘nalishi yozilgan.
-- [ ] `VC-041` — Custom user/auth strategiyasini amalga oshirish. **Done:** auth testlari va admin superuser yaratish hujjati bor.
-- [ ] `VC-042` — VoiceProfile va ConsentRecord modellari/migratsiyalari. **Done:** consent statusi audit qilinadi.
-- [ ] `VC-043` — AudioAsset metadata modeli va storage abstraction. **Done:** local diskdan object storage’ga o‘tish view kodini o‘zgartirishni talab qilmaydi.
-- [ ] `VC-044` — GenerationJob, GeneratedAudio va status transitions. **Done:** invalid transition rad etiladi.
-- [ ] `VC-045` — ModelRegistry va enabled/license gate. **Done:** litsenziyasi tekshirilmagan model public endpointda tanlanmaydi.
-- [ ] `VC-046` — DRF serializers, permissions va versioned API routes. **Done:** ownership va permission testlari yozilgan.
-- [ ] `VC-047` — API schema/OpenAPI generation. **Done:** frontend foydalanadigan endpointlar hujjatlashtirilgan.
-- [ ] `VC-048` — Structured error code va API logging. **Done:** foydalanuvchiga stack trace/secrets chiqmaydi.
+- [x] `VC-040` — Django 5.2 LTS + DRF project va apps (`accounts`, `voices`, `audio`, `generations`, `audit`). **Done:** modular monolith tuzilmasi, settings, URLs va Celery bog‘landi.
+- [x] `VC-041` — Custom user/auth strategiyasini amalga oshirish. **Done:** `accounts.User` (UUID, email-based auth, verification) yaratildi va testlandi.
+- [x] `VC-042` — VoiceProfile va ConsentRecord modellari/migratsiyalari. **Done:** Consent Gate amalga oshirildi, roziliksiz ovozdan generatsiya so‘rovi rad etiladi.
+- [x] `VC-043` — AudioAsset metadata modeli va storage abstraction. **Done:** `AudioStorageService` orqali SHA256 checksum hisoblash va fayllarni xavfsiz boshqarish ta'minlandi.
+- [x] `VC-044` — GenerationJob, GeneratedAudio va status transitions. **Done:** `state_machine.py` orqali noto‘g‘ri holat o‘tishlari (masalan, `SUCCEEDED` -> `RUNNING`) to‘xtatildi.
+- [x] `VC-045` — ModelRegistry va enabled/license gate. **Done:** faqat ruxsat berilgan modellar qabul qilinadi, noqonuniy modellar so‘rovi rad etiladi.
+- [x] `VC-046` — DRF serializers, permissions va versioned API routes. **Done:** `/api/v1/` prefiksi bilan barcha endpointlar, ownership tekshiruvi va ruxsatlar joriy etildi.
+- [x] `VC-047` — API schema/OpenAPI generation. **Done:** `/api/schema/` endpointida OpenAPI 3.1 spetsifikatsiyasi mavjud.
+- [x] `VC-048` — Structured error code va API logging. **Done:** `custom_exception_handler` orqali xavfsiz, parollarni chiqarmaydigan JSON xatolar qaytariladi.
 
 ## Phase 05 — Async jobs & persistence
 

@@ -26,3 +26,6 @@ checkpoints/
 *.log
 experiments/**/OpenVoice/
 experiments/**/checkpoints*/
+*.sqlite3
+*.db
+var/

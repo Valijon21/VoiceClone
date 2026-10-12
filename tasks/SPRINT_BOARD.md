@@ -30,14 +30,24 @@
 - [x] `VC-038`: Bounded concurrency (semaphore=1) va VRAM xotira tozalash (`concurrency.py`)
 - [x] `VC-039`: Barcha unit va integratsiya testlari (22 ta test to‘liq o‘tdi)
 
-## Hozirgi faol sprint (Sprint 05: Django Domain & REST API / Phase 04)
-- [ ] `VC-040`: Django 5.2 LTS + DRF project va applar strukturasi (`accounts`, `voices`, `consent`, `audio`, `generations`, `audit`)
-- [ ] `VC-041`: Custom User modeli va autentifikatsiya strategiyasi
-- [ ] `VC-042`: VoiceProfile va qat'iy ConsentRecord modellari / migratsiyalari
-- [ ] `VC-043`: AudioAsset metadata modeli va storage abstraction
-- [ ] `VC-044`: GenerationJob, GeneratedAudio va holat mashinasi (`PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED`)
-- [ ] `VC-045`: ModelRegistry va license gate DRF qatlami
-- [ ] `VC-046`: DRF serializers, ruxsatlar va versioned API routes
-- [ ] `VC-047`: OpenAPI schema generatori
-- [ ] `VC-048`: Strukturaviy xatolar va API logging
+## Sprint 05 (Django Domain & REST API / Phase 04) — DONE
+- [x] `VC-040`: Django 5.2 LTS + DRF project va applar strukturasi (`accounts`, `voices`, `audio`, `generations`, `audit`)
+- [x] `VC-041`: Custom User modeli va autentifikatsiya strategiyasi
+- [x] `VC-042`: VoiceProfile va qat'iy ConsentRecord modellari / migratsiyalari
+- [x] `VC-043`: AudioAsset metadata modeli va storage abstraction
+- [x] `VC-044`: GenerationJob, GeneratedAudio va holat mashinasi (`state_machine.py`)
+- [x] `VC-045`: ModelRegistry va license gate DRF qatlami (`APPROVED_MODELS`)
+- [x] `VC-046`: DRF serializers, ruxsatlar va versioned API routes (`/api/v1/`)
+- [x] `VC-047`: OpenAPI schema generatori (`/api/schema/`)
+- [x] `VC-048`: Strukturaviy xatolar va API logging (`custom_exception_handler`)
+
+## Hozirgi faol sprint (Sprint 06: Async Jobs & Celery Persistence / Phase 05)
+- [ ] `VC-050`: Celery queue va worker lifecycle
+- [ ] `VC-051`: `POST /generations/` asinxron task dispatch
+- [ ] `VC-052`: Idempotency key va safe retry
+- [ ] `VC-053`: Job polling endpoint va progress modeli
+- [ ] `VC-054`: Failure mapping: model offline, OOM, invalid input, timeout
+- [ ] `VC-055`: Result ownership checks va signed/private media access
+- [ ] `VC-056`: Generated file lifecycle va retention tozalash vazifasi
+
 

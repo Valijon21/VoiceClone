@@ -44,6 +44,11 @@ known-first-party = ["backend", "inference"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
+DJANGO_SETTINGS_MODULE = "core.settings"
+pythonpath = [
+    ".",
+    "backend",
+]
 testpaths = [
     "tests",
     "backend",
