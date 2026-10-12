@@ -2,10 +2,20 @@ import { ApprovedModel, AudioAsset, GenerationJob, User, VoiceProfile } from "..
 
 const BASE_URL = "";
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/csrftoken=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers || {});
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
+
+  const csrf = getCsrfToken();
+  if (csrf && !headers.has("X-CSRFToken")) {
+    headers.set("X-CSRFToken", csrf);
   }
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
