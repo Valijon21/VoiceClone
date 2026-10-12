@@ -34,6 +34,15 @@ def api_schema_view(_request):
                 "/api/v1/accounts/subscription/transactions/": {
                     "get": {"summary": "Retrieve payment and refund transaction history (VC-102)"}
                 },
+                "/api/v1/accounts/payments/checkout/": {
+                    "post": {"summary": "Generate checkout redirect URL for Click or Payme (VC-101)"}
+                },
+                "/api/v1/accounts/payments/payme/webhook/": {
+                    "post": {"summary": "Payme JSON-RPC 2.0 Merchant Webhook (VC-101)"}
+                },
+                "/api/v1/accounts/payments/click/webhook/": {
+                    "post": {"summary": "Click Shop API Prepare & Complete Webhook (VC-101)"}
+                },
                 "/api/v1/voices/": {
                     "get": {"summary": "List voice profiles"},
                     "post": {"summary": "Create voice profile"},

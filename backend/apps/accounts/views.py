@@ -372,3 +372,104 @@ class SimulatePaymentFailureView(generics.GenericAPIView):
                 "transaction": PaymentTransactionSerializer(fail_tx).data,
             }
         )
+
+
+class CheckoutInitiateView(generics.GenericAPIView):
+    """
+    Generate payment checkout link for Payme or Click (VC-101).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from decimal import Decimal
+
+        from rest_framework.response import Response
+
+        from .gateways import ClickGateway, PaymeGateway
+        from .models import Subscription
+        from .serializers import CheckoutInitiateSerializer
+
+        serializer = CheckoutInitiateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        plan = data["plan"]
+        cycle = data.get("billing_cycle", "MONTHLY")
+        provider = data.get("provider", "PAYME")
+        return_url = data.get("return_url")
+
+        base_price = Decimal(str(Subscription.PLAN_PRICES_UZS.get(plan, 79000.0)))
+        amount = base_price * Decimal("10.0") if cycle == Subscription.CYCLE_YEARLY else base_price
+
+        if provider == "PAYME":
+            gateway = PaymeGateway()
+            checkout_url = gateway.generate_payment_link(
+                user=request.user,
+                plan=plan,
+                amount=amount,
+                billing_cycle=cycle,
+                return_url=return_url,
+            )
+        elif provider == "CLICK":
+            gateway = ClickGateway()
+            checkout_url = gateway.generate_payment_link(
+                user=request.user,
+                plan=plan,
+                amount=amount,
+                billing_cycle=cycle,
+                return_url=return_url,
+            )
+        else:
+            return Response(
+                {"detail": f"Provider {provider} not supported for checkout."}, status=400
+            )
+
+        return Response(
+            {
+                "status": "success",
+                "provider": provider,
+                "plan": plan,
+                "billing_cycle": cycle,
+                "amount": amount,
+                "currency": "UZS",
+                "payment_url": checkout_url,
+            }
+        )
+
+
+class PaymeWebhookView(generics.GenericAPIView):
+    """
+    Payme JSON-RPC 2.0 Webhook Endpoint (VC-101).
+    Public endpoint verified via HTTP Basic Authentication.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from rest_framework.response import Response
+
+        from .gateways import PaymeGateway
+
+        gateway = PaymeGateway()
+        response_payload = gateway.process_webhook(request.data, request.headers)
+        return Response(response_payload)
+
+
+class ClickWebhookView(generics.GenericAPIView):
+    """
+    Click Shop API Webhook Endpoint (VC-101).
+    Handles Prepare (action=0) and Complete (action=1) verified via MD5 signature.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from rest_framework.response import Response
+
+        from .gateways import ClickGateway
+
+        gateway = ClickGateway()
+        payload = request.data.dict() if hasattr(request.data, "dict") else dict(request.data)
+        response_payload = gateway.process_webhook(payload, request.headers)
+        return Response(response_payload)

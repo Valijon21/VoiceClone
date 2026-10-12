@@ -283,3 +283,11 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+# Payment Gateway Integration Settings (VC-101)
+PAYME_MERCHANT_ID = os.getenv("PAYME_MERCHANT_ID", "mock_payme_merchant_id")
+PAYME_SECRET_KEY = os.getenv("PAYME_SECRET_KEY", "mock_payme_secret_key_test")
+CLICK_SERVICE_ID = os.getenv("CLICK_SERVICE_ID", "mock_click_service_id")
+CLICK_MERCHANT_ID = os.getenv("CLICK_MERCHANT_ID", "mock_click_merchant_id")
+CLICK_SECRET_KEY = os.getenv("CLICK_SECRET_KEY", "mock_click_secret_key_test")
+

@@ -83,17 +83,30 @@ class SubscriptionLifecycleService:
         sub.failed_payment_count = 0
         sub.save()
 
-        # Create settled PaymentTransaction
-        payment_tx = PaymentTransaction.objects.create(
-            user=user,
-            subscription=sub,
+        # Update existing pending transaction or create settled PaymentTransaction
+        payment_tx = PaymentTransaction.objects.filter(
             provider=provider,
             provider_transaction_id=tx_id,
-            amount=charged_amount,
-            currency="UZS",
-            status=PaymentTransaction.STATUS_SUCCEEDED,
-            idempotency_key=idempotency_key,
-        )
+        ).first()
+
+        if payment_tx:
+            payment_tx.subscription = sub
+            payment_tx.status = PaymentTransaction.STATUS_SUCCEEDED
+            payment_tx.amount = charged_amount
+            if idempotency_key:
+                payment_tx.idempotency_key = idempotency_key
+            payment_tx.save()
+        else:
+            payment_tx = PaymentTransaction.objects.create(
+                user=user,
+                subscription=sub,
+                provider=provider,
+                provider_transaction_id=tx_id,
+                amount=charged_amount,
+                currency="UZS",
+                status=PaymentTransaction.STATUS_SUCCEEDED,
+                idempotency_key=idempotency_key,
+            )
 
         # Apply plan quota & reset usage for the fresh billing cycle
         plan_seconds = Subscription.PLAN_SECONDS_MAP.get(plan, 300)

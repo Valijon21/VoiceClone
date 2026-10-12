@@ -128,6 +128,15 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     idempotency_key = serializers.CharField(max_length=128, required=False, allow_blank=True)
 
 
+class CheckoutInitiateSerializer(serializers.Serializer):
+    """Serializer for generating checkout payment redirect link (VC-101)."""
+
+    plan = serializers.ChoiceField(choices=[User.PLAN_CREATOR, User.PLAN_PRO])
+    billing_cycle = serializers.ChoiceField(choices=["MONTHLY", "YEARLY"], default="MONTHLY")
+    provider = serializers.ChoiceField(choices=["PAYME", "CLICK"], default="PAYME")
+    return_url = serializers.URLField(required=False, allow_blank=True)
+
+
 class SubscriptionCancelSerializer(serializers.Serializer):
     """Serializer for canceling a subscription (VC-102)."""
 
