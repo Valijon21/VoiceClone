@@ -66,7 +66,11 @@ def process_speech_synthesis_job(self, job_id: str) -> dict:
 
     try:
         with httpx.Client(timeout=float(settings.INFERENCE_TIMEOUT_SECONDS)) as client:
-            resp = client.post(inference_url, json=inference_payload)
+            resp = client.post(
+                inference_url,
+                json=inference_payload,
+                headers={"X-Request-ID": f"job_{job.id}"},
+            )
 
         if resp.status_code != 200:
             error_data = (

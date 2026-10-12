@@ -90,6 +90,7 @@
 
 ## Hozirgi faol sprint (Sprint 11: Paid SaaS & Quota Ledger / Phase 10) — IN PROGRESS
 - [x] `VC-100`: Plan, quota va immutable usage ledger (`UsageLedger`, superuser/owner/VIP `is_unlimited=True` cheksiz bypass, quota status & admin user plan API, 69 ta to'liq o'tgan testlar)
+- [x] `VC-106`: Observability, rotating file logging va correlation tracing (`var/logs/` 4 ta log fayllar, `X-Request-ID` middleware, frontend telemetriya, admin logs viewer API, 75 ta to'liq o'tgan testlar)
 - [ ] `VC-101`: Payment provider research/integration (Uzbekistan merchant / Click / Payme / Uzum)
 - [ ] `VC-102`: Subscription lifecycle, failed payments va refunds
 - [ ] `VC-103`: Public pricing, terms, privacy policy va deletion policy

@@ -1,8 +1,13 @@
 """VoiceClone AI Inference Service — FastAPI Application."""
 
 import base64
+import logging
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI, Request, status
@@ -33,6 +38,32 @@ from inference.app.schemas.responses import (
 SERVICE_VERSION: Final[str] = "0.1.0"
 IS_PRODUCTION: Final[bool] = os.getenv("ENVIRONMENT", "development").lower() == "production"
 
+# Setup Inference Rotating Log File
+INFERENCE_LOG_DIR = Path(
+    os.getenv("LOG_DIR", Path(__file__).resolve().parents[2] / "var" / "logs")
+).resolve()
+INFERENCE_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+inference_logger = logging.getLogger("voiceclone.inference")
+inference_logger.setLevel(logging.INFO)
+if not inference_logger.handlers:
+    _formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] [req:%(request_id)s] [%(name)s:%(lineno)d] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    _rf_handler = RotatingFileHandler(
+        filename=str(INFERENCE_LOG_DIR / "inference.log"),
+        maxBytes=10 * 1024 * 1024,
+        backupCount=10,
+        encoding="utf-8",
+    )
+    _rf_handler.setFormatter(_formatter)
+    inference_logger.addHandler(_rf_handler)
+
+    _c_handler = logging.StreamHandler()
+    _c_handler.setFormatter(_formatter)
+    inference_logger.addHandler(_c_handler)
+
 # Initialize singletons
 registry = ModelRegistry(is_production=IS_PRODUCTION)
 lock = BoundedInferenceLock(max_concurrent_jobs=1, timeout_seconds=30.0)
@@ -59,6 +90,39 @@ app = FastAPI(
     version=SERVICE_VERSION,
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def inference_correlation_middleware(request: Request, call_next):
+    req_id = request.headers.get("X-Request-ID") or f"inf_{uuid.uuid4().hex[:16]}"
+    start_time = time.time()
+    extra = {"request_id": req_id}
+    inference_logger.info("--> %s %s", request.method, request.url.path, extra=extra)
+
+    try:
+        response = await call_next(request)
+        duration_ms = round((time.time() - start_time) * 1000, 2)
+        inference_logger.info(
+            "<-- %s %s status=%d duration=%sms",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+            extra=extra,
+        )
+        response.headers["X-Request-ID"] = req_id
+        return response
+    except Exception as exc:
+        duration_ms = round((time.time() - start_time) * 1000, 2)
+        inference_logger.exception(
+            "INFERENCE_ERROR %s %s duration=%sms: %s",
+            request.method,
+            request.url.path,
+            duration_ms,
+            str(exc),
+            extra=extra,
+        )
+        raise
 
 
 @app.exception_handler(InferenceException)

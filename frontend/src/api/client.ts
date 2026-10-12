@@ -1,4 +1,5 @@
 import { ApprovedModel, AudioAsset, GenerationJob, User, VoiceProfile } from "../types";
+import { logger } from "../utils/logger";
 
 const BASE_URL = "";
 
@@ -18,6 +19,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers.set("X-CSRFToken", csrf);
   }
 
+  if (!headers.has("X-Request-ID")) {
+    headers.set("X-Request-ID", `fe_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
+  }
+
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
@@ -31,6 +36,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     } catch {
       // fallback
     }
+    const reqId = headers.get("X-Request-ID") || "-";
+    logger.warn(`API_CALL_FAILED [${reqId}] ${options.method || "GET"} ${endpoint} status=${res.status}`, { errorData });
     throw errorData;
   }
 

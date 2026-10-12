@@ -39,6 +39,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "core.middleware.RequestCorrelationMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -184,3 +185,101 @@ CELERY_TIMEZONE = TIME_ZONE
 INFERENCE_BASE_URL = os.getenv("INFERENCE_BASE_URL", "http://127.0.0.1:8001")
 INFERENCE_TIMEOUT_SECONDS = int(os.getenv("INFERENCE_TIMEOUT_SECONDS", "60"))
 CONSENT_STRICT_MODE = os.getenv("CONSENT_STRICT_MODE", "True").lower() in ("true", "1", "yes")
+
+# Observability & Structured Rotating File Logging (TASK-LOG-1)
+LOG_DIR = Path(os.getenv("LOG_DIR", BASE_DIR.parent / "var" / "logs")).resolve()
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "correlation": {
+            "()": "core.logging.CorrelationLogFilter",
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "%(asctime)s [%(levelname)s] [req:%(request_id)s] [user:%(user_id)s] [%(name)s:%(lineno)d] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "simple": {
+            "format": "%(asctime)s [%(levelname)s] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "filters": ["correlation"],
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "app_file": {
+            "level": "INFO",
+            "filters": ["correlation"],
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "app.log"),
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 10,
+            "formatter": "verbose",
+            "encoding": "utf-8",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "filters": ["correlation"],
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "error.log"),
+            "maxBytes": 10 * 1024 * 1024,
+            "backupCount": 10,
+            "formatter": "verbose",
+            "encoding": "utf-8",
+        },
+        "security_file": {
+            "level": "INFO",
+            "filters": ["correlation"],
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "security.log"),
+            "maxBytes": 10 * 1024 * 1024,
+            "backupCount": 10,
+            "formatter": "verbose",
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "voiceclone.request": {
+            "handlers": ["console", "app_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "voiceclone.security": {
+            "handlers": ["console", "security_file", "app_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "voiceclone.error": {
+            "handlers": ["console", "error_file", "app_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "voiceclone.api": {
+            "handlers": ["console", "app_file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "voiceclone.tasks": {
+            "handlers": ["console", "app_file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console", "error_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console", "app_file"],
+        "level": "INFO",
+    },
+}

@@ -10,6 +10,7 @@ import { JobProgressBar } from "./components/JobProgressBar";
 import { AudioPlayer } from "./components/AudioPlayer";
 import { VoiceProfilesList } from "./components/VoiceProfilesList";
 import { GenerationHistory } from "./components/GenerationHistory";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -239,4 +240,10 @@ export const App: React.FC = () => {
   );
 };
 
-export default App;
+const AppWithErrorBoundary: React.FC = () => (
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
+
+export default AppWithErrorBoundary;

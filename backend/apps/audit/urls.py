@@ -5,6 +5,8 @@ from .views import (
     AbuseReportListCreateView,
     AuditEventListView,
     BetaAnalyticsView,
+    SystemLogsView,
+    TelemetryLogView,
     UnitEconomicsView,
 )
 
@@ -16,4 +18,6 @@ urlpatterns = [
     path("events/", AuditEventListView.as_view(), name="events-list"),
     path("analytics/beta/", BetaAnalyticsView.as_view(), name="beta-analytics"),
     path("analytics/economics/", UnitEconomicsView.as_view(), name="unit-economics"),
+    path("telemetry/", TelemetryLogView.as_view(), name="frontend-telemetry"),
+    path("logs/", SystemLogsView.as_view(), name="system-logs"),
 ]

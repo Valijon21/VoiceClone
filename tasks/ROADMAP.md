@@ -115,6 +115,7 @@ Status boshlanishida barcha tasklar `TODO`.
 - [ ] `VC-103` — Public pricing, terms, privacy policy va deletion policy. **Done:** pullik ishga tushirishdan oldin hujjatlar ko‘rib chiqilgan.
 - [ ] `VC-104` — Customer support/admin dashboard. **Done:** quota, job status va consent/report holatlarini vakolatli xodim ko‘ra oladi.
 - [ ] `VC-105` — Load test va capacity plan. **Done:** test natijasiga ko‘ra bir worker/GPU ko‘tara oladigan concurrency belgilanadi.
+- [x] `VC-106` — Observability, rotating file logging va correlation tracing. **Done:** `var/logs/` da 4 ta aylanuvchi log fayllar (`app.log`, `error.log`, `security.log`, `inference.log`), `X-Request-ID` correlation middleware, frontend telemetriya va React `ErrorBoundary`, admin `GET /api/v1/audit/logs/` inspektori, `docs/OBSERVABILITY_AND_LOGGING.md` hujjati va 6 ta test bilan to‘liq joriy etildi.
 
 ## Phase 11 — Scale / B2B / API (faqat real talabdan keyin)
 

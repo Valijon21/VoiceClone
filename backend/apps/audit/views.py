@@ -119,3 +119,124 @@ class UnitEconomicsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class TelemetryLogView(APIView):
+    """
+    Frontend error telemetry ingest endpoint (TASK-LOG-4).
+    Receives uncaught browser exceptions, React crash events, and failed API calls,
+    routing them into rotating error.log and immutable audit trail.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        import logging
+
+        error_logger = logging.getLogger("voiceclone.error")
+
+        data = request.data or {}
+        level = data.get("level", "ERROR").upper()
+        message = str(data.get("message", "Unknown frontend error"))[:1000]
+        url = str(data.get("url", ""))[:255]
+        stack = str(data.get("stack", ""))[:2000]
+        context = data.get("context", {})
+
+        actor = request.user if request.user and request.user.is_authenticated else None
+        user_label = actor.username if actor else "anonymous"
+
+        # Log into rotating error file
+        error_logger.error(
+            "FRONTEND_TELEMETRY [%s] user=%s url=%s: %s | stack: %s",
+            level,
+            user_label,
+            url,
+            message,
+            stack.replace("\n", " -> ") if stack else "none",
+        )
+
+        # Record in database audit trail for permanent dispute / debug history
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            AuditEvent.objects.create(
+                actor=actor,
+                action="FRONTEND_TELEMETRY_ERROR",
+                target_model="FrontendTelemetry",
+                target_id=url[:64],
+                metadata={
+                    "level": level,
+                    "message": message,
+                    "url": url,
+                    "stack": stack,
+                    "context": context,
+                    "user_agent": request.META.get("HTTP_USER_AGENT", "")[:255],
+                },
+            )
+
+        return Response({"status": "received"}, status=status.HTTP_202_ACCEPTED)
+
+
+class SystemLogsView(APIView):
+    """
+    Protected log viewer and debug dashboard for Platform Owner/Admin (TASK-LOG-5).
+    Safely reads tail of rotating log files (app.log, error.log, security.log, inference.log).
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        log_type = request.query_params.get("type", "app").lower()
+        query = request.query_params.get("query", "").lower()
+        try:
+            lines_count = min(int(request.query_params.get("lines", 50)), 200)
+        except (ValueError, TypeError):
+            lines_count = 50
+
+        allowed_files = {
+            "app": settings.LOG_DIR / "app.log",
+            "error": settings.LOG_DIR / "error.log",
+            "security": settings.LOG_DIR / "security.log",
+            "inference": settings.LOG_DIR / "inference.log",
+        }
+
+        target_file: Path = allowed_files.get(log_type, settings.LOG_DIR / "app.log")
+        if not target_file.exists():
+            return Response(
+                {
+                    "log_type": log_type,
+                    "file_path": str(target_file),
+                    "total_returned": 0,
+                    "lines": [],
+                    "note": "Log file has not been created or written to yet.",
+                }
+            )
+
+        try:
+            with open(target_file, encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+
+            # Filter if query provided
+            if query:
+                all_lines = [ln for ln in all_lines if query in ln.lower()]
+
+            # Tail the requested number of lines
+            tail_lines = [ln.rstrip() for ln in all_lines[-lines_count:]]
+
+            return Response(
+                {
+                    "log_type": log_type,
+                    "file_path": target_file.name,
+                    "total_returned": len(tail_lines),
+                    "lines": tail_lines,
+                }
+            )
+        except Exception as exc:
+            return Response(
+                {"error": f"Failed to read log file: {str(exc)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+

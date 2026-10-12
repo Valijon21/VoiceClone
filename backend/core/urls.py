@@ -58,6 +58,12 @@ def api_schema_view(_request):
                 "/api/v1/audit/events/": {
                     "get": {"summary": "List security and compliance audit events"}
                 },
+                "/api/v1/audit/telemetry/": {
+                    "post": {"summary": "Ingest frontend browser errors and telemetry"}
+                },
+                "/api/v1/audit/logs/": {
+                    "get": {"summary": "Retrieve system rotating logs and audit trails (Admin only)"}
+                },
             },
         }
     )
