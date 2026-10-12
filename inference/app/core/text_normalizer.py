@@ -1,5 +1,7 @@
 """Text normalization and chunking engine with first-class Uzbek Latin support."""
 
+from __future__ import annotations
+
 import re
 from typing import Final
 
@@ -27,6 +29,68 @@ UZ_TENS: Final[dict[int, str]] = {
     70: "yetmish",
     80: "sakson",
     90: "to‘qson",
+}
+
+# Stem replacements for words frequently typed without apostrophes (VC-092 / P0-1, P0-2)
+COMMON_STEM_REPLACEMENTS: Final[dict[str, str]] = {
+    "ozbek": "o‘zbek",
+    "oqituvchi": "o‘qituvchi",
+    "oqish": "o‘qish",
+    "oqimoq": "o‘qimoq",
+    "ogil": "o‘g‘il",
+    "oglim": "o‘g‘lim",
+    "qoriqchi": "qo‘riqchi",
+    "malumot": "ma'lumot",
+    "talim": "ta'lim",
+    "etibor": "e'tibor",
+    "sanat": "san'at",
+    "tasir": "ta'sir",
+    "masul": "mas'ul",
+    "elon": "e'lon",
+    "mojiza": "mo‘jiza",
+    "songra": "so‘ngra",
+    "songgi": "so‘nggi",
+    "ortada": "o‘rtada",
+    "ogir": "o‘g‘ir",
+}
+
+EXACT_WORD_REPLACEMENTS: Final[dict[str, str]] = {
+    "tog": "tog‘",
+    "bog": "bog‘",
+    "song": "so‘ng",
+    "kop": "ko‘p",
+    "qol": "qo‘l",
+    "yol": "yo‘l",
+    "orta": "o‘rta",
+    "ogir": "o‘g‘ir",
+}
+
+SHORT_STEM_REPLACEMENTS: Final[dict[str, str]] = {
+    "tog": "tog‘",
+    "bog": "bog‘",
+    "qol": "qo‘l",
+    "yol": "yo‘l",
+    "bol": "bo‘l",
+    "kor": "ko‘r",
+    "kop": "ko‘p",
+}
+
+# Popular tech and media loanwords to phonetic spellings (VC-092 / P1-4)
+LOANWORD_PHONETICS: Final[dict[str, str]] = {
+    "youtube": "yutub",
+    "telegram": "telegram",
+    "python": "payton",
+    "google": "gugl",
+    "ai": "ey ay",
+    "it": "ay ti",
+    "chatgpt": "chat jipiti",
+}
+
+# Standard Uzbek abbreviations (VC-092 / P2-1)
+ABBREVIATIONS_MAP: Final[dict[str, str]] = {
+    r"\bva h\.k\b\.?": "va hokazo",
+    r"\bva boshq\b\.?": "va boshqalar",
+    r"\bmas\b\.": "masalan",
 }
 
 
@@ -71,11 +135,63 @@ def number_to_uzbek_words(n: int) -> str:
     return str(n)
 
 
+def number_to_uzbek_ordinal_words(n: int) -> str:
+    """Convert an integer into an ordinal word (e.g. 2026 -> ikki ming yigirma oltinchi)."""
+    cardinal = number_to_uzbek_words(n)
+    if cardinal.endswith(("i", "a")):
+        return f"{cardinal}nchi"
+    return f"{cardinal}inchi"
+
+
 class UzbekTextNormalizer:
     """Normalizes Uzbek Latin text, resolving apostrophes, numbers, and sentence chunking."""
 
-    # All non-standard single quote variants to unify
     _APOSTROPHE_VARIANTS = re.compile(r"[`ʼ’‘´ʻ]")
+
+    @staticmethod
+    def _match_case(original: str, replacement: str) -> str:
+        """Preserve original casing (e.g. Ozbekiston -> O‘zbekiston)."""
+        if original.isupper():
+            return replacement.upper()
+        if original[0].isupper():
+            return replacement[0].upper() + replacement[1:]
+        return replacement
+
+    @classmethod
+    def restore_missing_apostrophes(cls, text: str) -> str:
+        """Heuristically restore missing apostrophes for the most common ambiguous words (VC-092 / P0-1)."""
+        valid_suffixes = (
+            "da", "dan", "ga", "ni", "ning", "lar", "larga", "larda", "lardan",
+            "i", "im", "ing", "imiz", "ingiz", "di", "gan", "sa", "moq", "ish",
+            "dim", "dik", "dilar", "aylik", "cha", "dek"
+        )
+
+        def _replace_word(match: re.Match) -> str:
+            word = match.group(0)
+            low = word.lower()
+
+            # 1. Exact match
+            if low in EXACT_WORD_REPLACEMENTS:
+                return cls._match_case(word, EXACT_WORD_REPLACEMENTS[low])
+
+            # 2. Check stem replacements (e.g. ozbekistonda -> o‘zbekistonda)
+            for stem, rep_stem in COMMON_STEM_REPLACEMENTS.items():
+                if low.startswith(stem):
+                    suffix = low[len(stem):]
+                    rep = rep_stem + suffix
+                    return cls._match_case(word, rep)
+
+            # 3. Check short stems with common suffixes (e.g. togda -> tog‘da)
+            for stem, rep_stem in SHORT_STEM_REPLACEMENTS.items():
+                if low.startswith(stem):
+                    suffix = low[len(stem):]
+                    if not suffix or suffix in valid_suffixes:
+                        rep = rep_stem + suffix
+                        return cls._match_case(word, rep)
+
+            return word
+
+        return re.sub(r"\b[a-zA-Z‘'ʼ`´ʻ]+\b", _replace_word, text)
 
     @classmethod
     def normalize_apostrophes(cls, text: str) -> str:
@@ -85,6 +201,62 @@ class UzbekTextNormalizer:
         text = re.sub(r"([gG])[`ʼ’‘´ʻ']", r"\1‘", text)
         # 2. Remaining single quote variants (tutuq belgisi e.g. ma'lumot) -> "'"
         text = re.sub(r"[`ʼ’´ʻ]", "'", text)
+        return text
+
+    @classmethod
+    def normalize_loanwords(cls, text: str) -> str:
+        """Phonetize common foreign IT and media loanwords for natural spoken reading (VC-092 / P1-4)."""
+        def _replace_loanword(match: re.Match) -> str:
+            word = match.group(0)
+            low = word.lower()
+            if low in LOANWORD_PHONETICS:
+                phonetic = LOANWORD_PHONETICS[low]
+                if word[0].isupper():
+                    return phonetic.capitalize()
+                return phonetic
+            return word
+
+        return re.sub(r"\b[a-zA-Z0-9]+\b", _replace_loanword, text)
+
+    @classmethod
+    def expand_abbreviations(cls, text: str) -> str:
+        """Expand common abbreviations into full spoken words (VC-092 / P2-1)."""
+        for pattern, replacement in ABBREVIATIONS_MAP.items():
+            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        return text
+
+    @classmethod
+    def expand_ordinals_and_percentages(cls, text: str, language: str = "uz") -> str:
+        """Expand percentages (50%) and ordinal numbers (2026-yil, 1-o‘rin)."""
+        if language != "uz":
+            return text
+
+        # Percentages: 50% -> ellik foiz
+        def _replace_pct(match: re.Match) -> str:
+            num_str = match.group(1)
+            try:
+                num = int(num_str)
+                return f"{number_to_uzbek_words(num)} foiz"
+            except ValueError:
+                return match.group(0)
+
+        text = re.sub(r"\b(\d+)\s*%", _replace_pct, text)
+
+        # Ordinals: 2026-yil, 1-o'rinni, 5-sinf
+        def _replace_ordinal(match: re.Match) -> str:
+            num_str = match.group(1)
+            noun = match.group(2)
+            try:
+                num = int(num_str)
+                ord_word = number_to_uzbek_ordinal_words(num)
+                noun_norm = cls.normalize_apostrophes(noun)
+                return f"{ord_word} {noun_norm}"
+            except ValueError:
+                return match.group(0)
+
+        ordinal_regex = r"\b(\d+)-(yil[a-z]*|sinf[a-z]*|o[‘'`]rin[a-z]*|qavat[a-z]*|dars[a-z]*|bob[a-z]*|modda[a-z]*|kun[a-z]*|oy[a-z]*)\b"
+        text = re.sub(ordinal_regex, _replace_ordinal, text, flags=re.IGNORECASE)
+
         return text
 
     @classmethod
@@ -123,7 +295,11 @@ class UzbekTextNormalizer:
             return ""
         cleaned = cls.clean_text(text)
         if language == "uz":
+            cleaned = cls.restore_missing_apostrophes(cleaned)
             cleaned = cls.normalize_apostrophes(cleaned)
+            cleaned = cls.expand_abbreviations(cleaned)
+            cleaned = cls.normalize_loanwords(cleaned)
+            cleaned = cls.expand_ordinals_and_percentages(cleaned, language="uz")
             cleaned = cls.expand_numbers(cleaned, language="uz")
         return cleaned
 

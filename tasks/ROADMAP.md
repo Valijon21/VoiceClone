@@ -103,7 +103,7 @@ Status boshlanishida barcha tasklar `TODO`.
 
 - [x] `VC-090` — Beta analytics: job success, p50/p95 latency, RTF, language/model, error rates. **Done:** `OperationalMetric` modeli, Celery orqali operatsion telemetriya yozilishi, p50/p95 persentil kechikish va RTF formulalari, `GET /api/v1/audit/analytics/beta/` himoyalangan admin API endpointi to‘liq joriy etildi va 6 ta yangi test bilan tasdiqlandi (foydalanuvchi matni va audiosi kiritilmagan holda).
 - [x] `VC-091` — 10–20 beta foydalanuvchi bilan kuzatuv. **Done:** `docs/BETA_USER_JOURNEYS.md` da 16 ishtirokchi (4 kohorta), 6 ta asosiy user journey (UJ-1 dan UJ-6), 7 ta friction point (F-01 dan F-07), 84 ta sintez topshirig‘i va `POST /api/v1/generations/jobs/<id>/rate/` sifatni baholash endpointi to‘liq joriy etildi va testlandi.
-- [ ] `VC-092` — O‘zbekcha talaffuz bug backlog’i. **Done:** eng ko‘p uchraydigan xatolar ustuvorlik bilan ajratilgan.
+- [x] `VC-092` — O‘zbekcha talaffuz bug backlog’i. **Done:** `docs/UZBEK_PRONUNCIATION_BUG_BACKLOG.md` da P0/P1/P2 ustuvorlikdagi fonetik muammolar tizimlashtirildi, `inference/app/core/text_normalizer.py` da apostrofsiz so‘zlarni tiklash, tartib sonlar (2026-yil -> ikki ming yigirma oltinchi yil), foizlar va IT terminlar fonetizatsiyasi joriy etildi va 8 ta test bilan tasdiqlandi.
 - [ ] `VC-093` — Target auditoriya va willingness-to-pay intervyulari. **Done:** kamida 15–30 suhbat xulosasi va sinov narx gipotezasi bor.
 - [ ] `VC-094` — Unit economics dashboard. **Done:** har generation bo‘yicha compute time, storage usage va taxminiy tannarx hisoblanadi.
 
