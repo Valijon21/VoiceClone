@@ -3,7 +3,42 @@ export interface User {
   username: string;
   email: string;
   is_verified: boolean;
+  plan?: string;
+  is_unlimited?: boolean;
+  audio_seconds_quota?: number;
+  audio_seconds_used?: number;
+  remaining_seconds?: number;
   created_at: string;
+}
+
+export interface QuotaInfo {
+  plan: string;
+  is_unlimited: boolean;
+  audio_seconds_quota: number;
+  audio_seconds_used: number;
+  remaining_seconds: number;
+  usage_percent: number;
+}
+
+export interface SubscriptionInfo {
+  id: string;
+  plan: string;
+  status: "TRIAL" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
+  billing_cycle: "MONTHLY" | "YEARLY";
+  price_amount: number;
+  currency: string;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  grace_period_until?: string | null;
+}
+
+export interface CheckoutResponse {
+  status: string;
+  provider: string;
+  plan: string;
+  amount_uzs: number;
+  checkout_url: string;
 }
 
 export interface ConsentRecord {

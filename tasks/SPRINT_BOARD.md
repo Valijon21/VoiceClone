@@ -88,11 +88,19 @@
 - [x] `VC-093`: Target auditoriya va willingness-to-pay intervyulari
 - [x] `VC-094`: Unit economics dashboard va compute tannarx hisobi
 
-## Hozirgi faol sprint (Sprint 11: Paid SaaS & Quota Ledger / Phase 10) — IN PROGRESS
+## Sprint 11 (Paid SaaS & Quota Ledger / Phase 10) — DONE
 - [x] `VC-100`: Plan, quota va immutable usage ledger (`UsageLedger`, superuser/owner/VIP `is_unlimited=True` cheksiz bypass, quota status & admin user plan API, 69 ta to'liq o'tgan testlar)
+- [x] `VC-101`: Payment provider research/integration (Uzbekistan merchant / Payme JSON-RPC 2.0 & Click Shop API, checkout, webhooks, 9 ta test)
+- [x] `VC-102`: Subscription lifecycle, failed payments, grace periods va safe refunds (`SubscriptionLifecycleService`, 15 ta test)
+- [x] `VC-103`: Public pricing UI, terms, privacy policy va deletion policy (`docs/TERMS_AND_PRIVACY_POLICY.md`, `PricingModal.tsx`, `LegalModal.tsx`)
+- [x] `VC-104`: Customer support/admin dashboard (`accounts/admin.py`, `audit/admin.py`, `voices/admin.py`, `generations/admin.py`)
+- [x] `VC-105`: Load test va capacity plan (`docs/CAPACITY_PLAN_AND_LOAD_TEST.md`, `tests/test_load_concurrency_and_capacity.py`, 5 ta test)
 - [x] `VC-106`: Observability, rotating file logging va correlation tracing (`var/logs/` 4 ta log fayllar, `X-Request-ID` middleware, frontend telemetriya, admin logs viewer API, 75 ta to'liq o'tgan testlar)
-- [ ] `VC-101`: Payment provider research/integration (Uzbekistan merchant / Click / Payme / Uzum)
-- [ ] `VC-102`: Subscription lifecycle, failed payments va refunds
-- [ ] `VC-103`: Public pricing, terms, privacy policy va deletion policy
-- [ ] `VC-104`: Customer support/admin dashboard
-- [ ] `VC-105`: Load test va capacity plan
+
+## Keyingi bosqich (Sprint 12: Scale / B2B / Multi-worker / Phase 11 — Bozor talabidan keyin)
+- [ ] `VC-110`: Multiple inference workers va queue routing
+- [ ] `VC-111`: Organization/workspace va team permissions
+- [ ] `VC-112`: API keys, usage caps, rotate/revoke va webhook
+- [ ] `VC-113`: S3-compatible object storage + lifecycle policy
+- [ ] `VC-114`: Monitoring alerts va incident response
+- [ ] `VC-115`: Tenant-level billing, quotas va audit

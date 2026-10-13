@@ -11,6 +11,8 @@ import { AudioPlayer } from "./components/AudioPlayer";
 import { VoiceProfilesList } from "./components/VoiceProfilesList";
 import { GenerationHistory } from "./components/GenerationHistory";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PricingModal } from "./components/PricingModal";
+import { LegalModal } from "./components/LegalModal";
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -22,6 +24,8 @@ export const App: React.FC = () => {
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isConsentOpen, setIsConsentOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -110,6 +114,8 @@ export const App: React.FC = () => {
         user={user}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenLegal={() => setIsLegalOpen(true)}
       />
 
       {/* Main Content Container */}
@@ -140,14 +146,24 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
-            onClick={() => setIsConsentOpen(true)}
-          >
-            Qoidalarni ko‘rish & Rozilik berish
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
+              onClick={() => setIsPricingOpen(true)}
+            >
+              💎 Tariflarni ko‘rish
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
+              onClick={() => setIsConsentOpen(true)}
+            >
+              Rozilik berish
+            </button>
+          </div>
         </div>
 
         {/* 2-Column Responsive Dashboard */}
@@ -215,9 +231,25 @@ export const App: React.FC = () => {
         <p style={{ marginBottom: "0.5rem" }}>
           VoiceClone AI &bull; O‘zbek, ingliz va rus tillari uchun axloqiy ovoz platformasi
         </p>
-        <p style={{ fontSize: "0.75rem" }}>
+        <p style={{ fontSize: "0.75rem", marginBottom: "0.75rem" }}>
           Ovoz klonlash faqat rasmiy rozilik bilan amalga oshiriladi. Ma'lumotlarni saqlash muddati (Retention): 7 kun.
         </p>
+        <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", fontSize: "0.78rem" }}>
+          <button
+            type="button"
+            onClick={() => setIsPricingOpen(true)}
+            style={{ background: "none", border: "none", color: "var(--accent-cyan)", cursor: "pointer", textDecoration: "underline" }}
+          >
+            Obuna va Tariflar
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsLegalOpen(true)}
+            style={{ background: "none", border: "none", color: "var(--accent-cyan)", cursor: "pointer", textDecoration: "underline" }}
+          >
+            Foydalanish Shartlari & Maxfiylik
+          </button>
+        </div>
       </footer>
 
       {/* Modals */}
@@ -235,6 +267,18 @@ export const App: React.FC = () => {
         isOpen={isConsentOpen}
         onClose={() => setIsConsentOpen(false)}
         onProfileCreated={handleProfileCreated}
+      />
+
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        user={user}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
+
+      <LegalModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
       />
     </div>
   );

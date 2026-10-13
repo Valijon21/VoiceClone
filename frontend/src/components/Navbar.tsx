@@ -5,9 +5,17 @@ interface NavbarProps {
   user: User | null;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenPricing: () => void;
+  onOpenLegal: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ user, onOpenAuth, onLogout }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  user,
+  onOpenAuth,
+  onLogout,
+  onOpenPricing,
+  onOpenLegal,
+}) => {
   return (
     <header className="glass-panel" style={{ margin: "1rem auto", maxWidth: "1280px", padding: "1rem 1.5rem" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
@@ -43,24 +51,51 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onOpenAuth, onLogout }) =>
           </div>
         </div>
 
-        {/* System Badges & User Status */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+        {/* System Badges & Navigation Actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap" }}>
           <div className="badge badge-emerald" title="Faqat tasdiqlangan rozilik bilan generatsiya qilinadi">
             <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "currentColor" }}></span>
             Consent Gate: STRICT
           </div>
 
-          <div className="badge badge-indigo" title="OpenVoice V2 + MeloTTS AI Adapter">
-            Model: OpenVoice V2
-          </div>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.35rem" }}
+            onClick={onOpenPricing}
+            title="Tariflar va obuna rejalari"
+          >
+            <span>💎</span>
+            <span>Tariflar</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ padding: "0.4rem 0.75rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.35rem" }}
+            onClick={onOpenLegal}
+            title="Oferta va xavfsizlik qoidalari"
+          >
+            <span>📜</span>
+            <span>Shartlar</span>
+          </button>
 
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "0.5rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginLeft: "0.25rem" }}>
+              {/* User Plan Badge */}
+              <div
+                className={user.is_unlimited || user.plan === "UNLIMITED" ? "badge badge-indigo" : "badge badge-cyan"}
+                style={{ fontSize: "0.75rem", fontWeight: 700 }}
+                title={user.is_unlimited ? "Cheksiz VIP rejim" : `Kvota: ${user.audio_seconds_quota || 300} soniya`}
+              >
+                {user.is_unlimited ? "👑 VIP Cheksiz" : `${user.plan || "FREE"}`}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
                 <div
                   style={{
-                    width: "32px",
-                    height: "32px",
+                    width: "30px",
+                    height: "30px",
                     borderRadius: "50%",
                     background: "var(--bg-tertiary)",
                     border: "1px solid var(--accent-primary)",
@@ -68,18 +103,19 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onOpenAuth, onLogout }) =>
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 700,
-                    fontSize: "0.85rem",
+                    fontSize: "0.82rem",
                     color: "var(--accent-primary)",
                   }}
                 >
                   {user.username.charAt(0).toUpperCase()}
                 </div>
-                <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{user.username}</span>
+                <span style={{ fontSize: "0.88rem", fontWeight: 600 }}>{user.username}</span>
               </div>
+
               <button
                 type="button"
                 className="btn-secondary"
-                style={{ padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
+                style={{ padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
                 onClick={onLogout}
                 aria-label="Chiqish"
               >
@@ -90,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onOpenAuth, onLogout }) =>
             <button
               type="button"
               className="btn-primary"
-              style={{ padding: "0.5rem 1.1rem", fontSize: "0.85rem" }}
+              style={{ padding: "0.45rem 1rem", fontSize: "0.83rem" }}
               onClick={onOpenAuth}
               aria-label="Kirish yoki Ro‘yxatdan o‘tish"
             >

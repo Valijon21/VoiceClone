@@ -1,4 +1,13 @@
-import { ApprovedModel, AudioAsset, GenerationJob, User, VoiceProfile } from "../types";
+import {
+  ApprovedModel,
+  AudioAsset,
+  CheckoutResponse,
+  GenerationJob,
+  QuotaInfo,
+  SubscriptionInfo,
+  User,
+  VoiceProfile,
+} from "../types";
 import { logger } from "../utils/logger";
 
 const BASE_URL = "";
@@ -68,6 +77,33 @@ export const api = {
 
   async getMe(): Promise<User> {
     return request<User>("/api/v1/accounts/me/");
+  },
+
+  async getQuota(): Promise<QuotaInfo> {
+    return request<QuotaInfo>("/api/v1/accounts/quota/");
+  },
+
+  async getSubscription(): Promise<SubscriptionInfo> {
+    return request<SubscriptionInfo>("/api/v1/accounts/subscription/");
+  },
+
+  async initiateCheckout(payload: {
+    plan: string;
+    billing_cycle?: "MONTHLY" | "YEARLY";
+    provider?: "PAYME" | "CLICK";
+    return_url?: string;
+  }): Promise<CheckoutResponse> {
+    return request<CheckoutResponse>("/api/v1/accounts/payments/checkout/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async cancelSubscription(payload?: { immediate?: boolean; reason?: string }): Promise<any> {
+    return request("/api/v1/accounts/subscription/cancel/", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    });
   },
 
   // Voices & Consent
